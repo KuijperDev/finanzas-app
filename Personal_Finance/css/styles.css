@@ -1,0 +1,905 @@
+/* === GLOBAL === */
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f4f4;
+  margin: 0;
+  padding: 0;
+}
+
+/* === CONTENEDOR GENERAL === */
+.container {
+  max-width: 1200px;
+  margin: 30px auto;
+  padding: 20px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+/* === RESUMEN / SALDO === */
+.summary {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 1.2rem;
+}
+
+/* === BOTÓN AGREGAR EDITAR EXPORT NUEVA FILA === */
+.controls {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.control-btn {
+  font-size: 1rem;
+  background-color: #eef;
+  border: 1px solid #99f;
+  padding: 0.5rem 1.2rem;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #333;
+  margin: 0 6px;
+  transition: background-color 0.2s ease;
+}
+
+.control-btn:hover {
+  background-color: #dde;
+}
+
+body.dark-mode .control-btn {
+  background-color: #333;
+  color: #f0f0f0;
+  border: 1px solid #666;
+}
+
+body.dark-mode .control-btn:hover {
+  background-color: #444;
+}
+
+
+/* === TABLA === */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: white;
+  font-size: 0.95rem;
+}
+
+thead {
+  background-color: #e0e0e0;
+}
+
+thead th {
+  text-align: left;
+  padding: 10px;
+  border-bottom: 2px solid #ccc;
+}
+
+tbody td {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+tbody tr:hover {
+  background-color: #f9f9ff;
+}
+
+/* === FILA EDITABLE === */
+#editable-row {
+  background-color: #fffbe6 !important;
+}
+
+#editable-row input,
+#editable-row select {
+  width: 100%;
+  padding: 6px;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+
+/* === BOTÓN GUARDAR EN FILA === */
+#save-row-btn {
+  padding: 6px 10px;
+  font-size: 0.9rem;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#save-row-btn:hover {
+  background-color: #43a047;
+}
+
+/* === BOTÓN CANCELAR EN FILA === */
+#cancel-row-btn {
+  padding: 8px 16px;
+  font-size: 0.95rem;
+  background-color: #b71c1c;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+#cancel-row-btn:hover {
+  background-color: #8e0000;
+}
+
+/* === COLORES DE IMPORTES === */
+td:nth-child(3) {
+  font-weight: bold;
+}
+
+td:nth-child(3)[style*="color: red"] {
+  color: red;
+}
+
+td:nth-child(3)[style*="color: green"] {
+  color: green;
+}
+
+/* === RESPONSIVO BÁSICO === */
+@media (max-width: 768px) {
+  table, thead, tbody, th, td, tr {
+    display: block;
+  }
+
+  thead {
+    display: none;
+  }
+
+  tbody tr {
+    margin-bottom: 1rem;
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 6px;
+  }
+
+  tbody td {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+  }
+
+  tbody td::before {
+    content: attr(data-label);
+    font-weight: bold;
+  }
+}
+
+/* === BOTÓN DE TEMA === */
+.theme-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: #eee;
+  color: #333;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  z-index: 1000;
+  transition: all 0.3s ease;
+}
+
+
+
+.theme-toggle:hover {
+  background-color: #ddd;
+}
+
+/* === MODO OSCURO MANUAL === */
+body.dark-mode {
+  background-color: #121212;
+  color: #f0f0f0;
+}
+
+body.dark-mode .container {
+  background-color: #1e1e1e;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+}
+
+body.dark-mode table {
+  background-color: #1a1a1a;
+  color: #f0f0f0;
+}
+
+body.dark-mode thead {
+  background-color: #2a2a2a;
+}
+
+body.dark-mode tbody tr:hover {
+  background-color: #2c2c2c;
+}
+
+body.dark-mode #editable-row {
+  background-color: #3a3a1e !important;
+}
+
+body.dark-mode input,
+body.dark-mode select {
+  background-color: #2a2a2a;
+  color: #f0f0f0;
+  border: 1px solid #555;
+}
+
+body.dark-mode #save-row-btn {
+  background-color: #388e3c;
+}
+
+body.dark-mode #save-row-btn:hover {
+  background-color: #2e7d32;
+}
+
+body.dark-mode #add-row-btn {
+  background-color: #333;
+  border: 1px solid #666;
+  color: #f0f0f0;
+}
+body.dark-mode #edit-table-btn {
+  background-color: #333;
+  border: 1px solid #666;
+  color: #f0f0f0;
+}
+
+body.dark-mode .theme-toggle {
+  background-color: #444;
+  color: #f0f0f0;
+}
+
+body.dark-mode .input-euro-wrapper span {
+  color: #f0f0f0;
+}
+
+body.dark-mode .input-euro-wrapper input {
+  background-color: #2a2a2a;
+  color: #f0f0f0;
+  border: 1px solid #555;
+}
+
+/* === CENTRAR TEXTO EN CELDAS DE TABLA === */
+#transactions-table th,
+#transactions-table td {
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* === CENTRAR TEXTO DENTRO DE INPUTS Y SELECTS === */
+#transactions-table input,
+#transactions-table select {
+  text-align: center;
+}
+
+.input-euro-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.input-euro-wrapper span {
+  font-weight: bold;
+  font-size: 1rem;
+  color: #444;
+}
+
+.input-euro-wrapper input {
+  text-align: center;
+  padding: 6px;
+  font-size: 0.95rem;
+  width: 100px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #fff;
+  color: #000;
+}
+
+
+/* === CONTENEDOR DE CUENTAS === */
+#accounts-section {
+  margin-top: 2rem;
+}
+
+#add-account-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 1rem;
+  align-items: center;
+}
+
+#add-account-form input,
+#add-account-form select {
+  padding: 8px;
+  font-size: 0.95rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  flex: 1;
+  min-width: 150px;
+}
+
+#add-account-form button {
+  padding: 8px 12px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+#add-account-form button:hover {
+  background-color: #43a047;
+}
+
+
+/* === TARJETAS DE CUENTAS === */
+#accounts-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.account-card {
+  background-color: #f0f0f0;
+  padding: 12px 16px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  min-width: 150px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.accounts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+body.dark-mode .accounts-grid {
+  background-color: transparent;
+}
+
+.account-card button {
+  margin: 5px 4px 0;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.account-card .edit-btn {
+  background-color: #ffa726;
+  color: white;
+}
+
+.account-card .delete-btn {
+  background-color: #e53935;
+  color: white;
+}
+
+.account-card .edit-btn:hover {
+  background-color: #fb8c00;
+}
+
+.account-card .delete-btn:hover {
+  background-color: #c62828;
+}
+
+body.dark-mode .account-card {
+  background-color: #2a2a2a;
+  color: #f0f0f0;
+}
+
+
+/* ===  Estilo para pestañas === */
+.nav-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.nav-tabs button {
+  padding: 10px 20px;
+  border: none;
+  background-color: #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s;
+}
+
+.nav-tabs button.active {
+  background-color: #4285f4;
+  color: white;
+}
+
+body.dark-mode .nav-tabs button {
+  background-color: #333;
+  color: #ccc;
+}
+
+body.dark-mode .nav-tabs button.active {
+  background-color: #2196f3;
+  color: #fff;
+}
+
+/* === VISTA DE CATEGORÍAS === */
+.categories-container {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+.category-column {
+  background-color: #fff;
+  padding: 1rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  min-width: 250px;
+  flex: 1;
+}
+
+.category-list {
+  list-style: none;
+  padding: 0;
+}
+
+.category-list li {
+  margin: 6px 0;
+  padding: 6px 8px;
+  background-color: #f4f4f4;
+  border-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.category-list li .subcategory {
+  margin-left: 1.5rem;
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+.add-category-btn {
+  margin-top: 10px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.add-category-btn:hover {
+  background-color: #43a047;
+}
+
+body.dark-mode .category-column {
+  background-color: #1e1e1e;
+  color: #f0f0f0;
+}
+
+body.dark-mode .category-list li {
+  background-color: #2a2a2a;
+}
+
+body.dark-mode .add-category-btn {
+  background-color: #388e3c;
+}
+
+.category-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.category-header h3 {
+  margin: 0;
+}
+
+.add-category-btn {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.add-category-btn:hover {
+  background-color: #388e3c;
+}
+
+.add-subcategory-btn {
+  margin-left: 10px;
+  font-size: 0.9rem;
+  padding: 2px 8px;
+  background-color: #2196f3;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.add-subcategory-btn:hover {
+  background-color: #1976d2;
+}
+
+th[data-field] {
+  cursor: pointer;
+}
+
+.filters-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.filters-bar select,
+.filters-bar input,
+.filters-bar button {
+  padding: 5px;
+}
+
+#usuario-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  margin-bottom: 1em;
+}
+
+
+
+
+
+.hidden {
+  display: none;
+}
+
+.user-section {
+  margin-bottom: 0.8rem;
+}
+
+.user-section label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-weight: bold;
+}
+
+.user-section input,
+.user-section select {
+  width: 100%;
+  padding: 0.3rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.user-section button {
+  margin-top: 0.3rem;
+  width: 100%;
+  padding: 0.4rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+#btn-agregar-usuario {
+  background-color: #4CAF50;
+  color: white;
+}
+
+#btn-eliminar-usuario {
+  background-color: #f44336;
+  color: white;
+}
+
+#btn-cerrar-sesion {
+  background-color: #607D8B;
+  color: white;
+}
+
+#top-right-buttons {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  z-index: 100;
+  align-items: center;
+}
+
+
+
+#user-menu-container {
+  position: relative;
+}
+
+#user-icon {
+  font-size: 1.5rem;
+  cursor: pointer;
+  background-color: #eee;
+  padding: 0.4rem 0.6rem;
+  border-radius: 50%;
+  box-shadow: 0 0 4px rgba(0,0,0,0.2);
+}
+
+#user-dropdown {
+  position: absolute;
+  top: 2.5rem;
+  right: 0;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  padding: 1rem;
+  width: 250px;
+  z-index: 101;
+}
+
+.theme-toggle-btn {
+  font-size: 1.4rem;
+  padding: 0.3rem 0.6rem;
+  border: none;
+  border-radius: 50%;
+  background-color: #eee;
+  box-shadow: 0 0 4px rgba(0,0,0,0.2);
+  cursor: pointer;
+}
+
+section {
+  display: none;
+}
+
+section.activa {
+  display: block;
+}
+
+/* === LOGIN CONTAINER === */
+#login-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(240, 240, 240, 0.95);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.login-box {
+  background: white;
+  padding: 2rem 2.5rem;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+  max-width: 320px;
+  width: 100%;
+  text-align: center;
+  font-family: Arial, sans-serif;
+}
+
+.login-box h2 {
+  margin-bottom: 1rem;
+}
+
+.login-box p {
+  margin-bottom: 1.5rem;
+  color: #444;
+  font-size: 1rem;
+}
+
+#usuario-select-login,
+#nuevo-usuario-login {
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
+#usuario-select-login {
+  cursor: pointer;
+  background-color: white;
+}
+
+#nuevo-usuario-login::placeholder {
+  color: #999;
+}
+
+.login-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.login-buttons button {
+  flex: 1;
+  padding: 0.6rem 0;
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background-color: #4285f4;
+  color: white;
+  transition: background-color 0.25s ease;
+}
+
+.login-buttons button:hover {
+  background-color: #3367d6;
+}
+
+/* Modo oscuro para login */
+body.dark-mode #login-container {
+  background: rgba(18, 18, 18, 0.9);
+}
+
+body.dark-mode .login-box {
+  background: #1e1e1e;
+  color: #eee;
+  box-shadow: 0 6px 20px rgba(255,255,255,0.1);
+  border: 1px solid #333;
+}
+
+body.dark-mode #usuario-select-login,
+body.dark-mode #nuevo-usuario-login {
+  background-color: #2a2a2a;
+  border: 1px solid #555;
+  color: #eee;
+}
+
+body.dark-mode #usuario-select-login option {
+  background-color: #2a2a2a;
+  color: #eee;
+}
+
+
+/* === RESPONSIVE AVANZADO === */
+@media (max-width: 1024px) {
+  .container {
+    margin: 20px 15px;
+    padding: 15px;
+  }
+
+  /* Nav tabs apiladas verticalmente para tablets */
+  .nav-tabs {
+    flex-direction: column;
+    align-items: center;
+  }
+  .nav-tabs button {
+    width: 100%;
+    max-width: 300px;
+    margin-bottom: 8px;
+  }
+
+  /* Ajuste controles en fila, que ocupen espacio en pantallas menores */
+  .controls {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .control-btn {
+    flex: 1 1 40%;
+    margin: 4px 0;
+  }
+}
+
+@media (max-width: 600px) {
+  /* Contenedores principales */
+  .container {
+    margin: 15px 10px;
+    padding: 10px;
+  }
+
+  /* Login box ancho ajustado */
+  .login-box {
+    padding: 1.5rem 1.8rem;
+    max-width: 90vw;
+  }
+
+  /* Ocultar tabla y usar vista tipo lista */
+  table, thead, tbody, th, td, tr {
+    display: block;
+  }
+  thead {
+    display: none;
+  }
+  tbody tr {
+    margin-bottom: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+  }
+  tbody td {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 8px;
+    border: none;
+  }
+  tbody td::before {
+    content: attr(data-label);
+    font-weight: bold;
+    flex: 1;
+    text-align: left;
+  }
+  tbody td:last-child {
+    text-align: right;
+  }
+
+  /* Ajustar filtros: apilar en columna */
+  .filters-bar {
+    flex-direction: column;
+  }
+  .filters-bar select,
+  .filters-bar input,
+  .filters-bar button {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Ajustar botones de pestañas (nav-tabs) */
+  .nav-tabs {
+    gap: 6px;
+  }
+  .nav-tabs button {
+    font-size: 0.9rem;
+    padding: 8px 10px;
+  }
+
+  /* Ajustar menú usuario en top-right para que no se amontone */
+  #top-right-buttons {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Ajustar icono usuario para ser más pequeño */
+  #user-icon {
+    font-size: 1.2rem;
+    padding: 0.3rem 0.5rem;
+  }
+
+  /* Ajustar panel de usuario desplegable para móvil */
+  #user-dropdown {
+    width: 90vw;
+    right: 5vw;
+    padding: 0.8rem;
+  }
+
+  /* Ajustar inputs y selects generales para móvil */
+  input, select, button {
+    font-size: 1rem;
+  }
+
+  /* Ajustes para tarjetas cuentas */
+  .accounts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Ajustes para columnas categorías apiladas */
+  .categories-container {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .category-column {
+    min-width: auto;
+    width: 100%;
+  }
+}

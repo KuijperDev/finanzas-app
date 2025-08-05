@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>App de Finanzas Personales</title>
+  <link rel="stylesheet" href="./css/styles.css" />
+</head>
+<body>
+
+  <!-- Pantalla de inicio de sesión -->
+  <div id="login-container" style="display:none;">
+    <div class="login-box">
+      <h2>👤 Bienvenido</h2>
+      <p>Selecciona o crea un usuario para empezar</p>
+
+      <select id="usuario-select-login"></select>
+      <input type="text" id="nuevo-usuario-login" placeholder="Nuevo usuario">
+      
+      <div class="login-buttons">
+        <button id="btn-login">Iniciar sesión</button>
+        <button id="btn-agregar-usuario-login">Crear e iniciar sesión</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenido principal de la app -->
+  <div id="app-container" >
+
+    <div class="nav-tabs">
+      <button id="tab-transactions" class="active">🧾 Transacciones</button>
+      <button id="tab-accounts">💼 Cuentas</button>
+      <button id="tab-categories">🏷️ Categorías</button>
+    </div>
+
+    <div id="top-right-buttons">
+      <button id="theme-toggle" class="theme-toggle-btn">🌙</button>
+      <div id="user-menu-container">
+        <div id="user-icon">👤</div>
+        <div id="user-dropdown" class="hidden">
+          
+          <div class="user-section">
+            <button id="btn-eliminar-usuario">🗑️ Eliminar actual</button>
+          </div>
+
+          <div class="user-section">
+            <button id="btn-cerrar-sesion">🔒 Cerrar sesión</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vista de Transacciones -->
+    <section id="transactions-view">
+      <div class="container">
+        <h1>Mis Finanzas</h1>
+
+        <div class="summary">
+          <p><strong>Saldo:</strong> <span id="balance">0 €</span></p>
+        </div>
+
+        <div class="controls">
+          <button id="add-row-btn" class="control-btn">➕</button>
+          <button id="edit-table-btn" class="control-btn">✏️</button>
+          <button id="export-csv-btn" class="control-btn">📤</button>
+          <button id="import-xlsx-btn" class="control-btn">📥</button>
+          <input type="file" id="file-input" accept=".xlsx" style="display: none;" />
+        </div>
+
+        <div id="filters" class="filters-bar">
+          <select id="filter-account"><option value="">Todas las cuentas</option></select>
+          <select id="filter-type">
+            <option value="">Todos los tipos</option>
+            <option value="Ingreso">Ingreso</option>
+            <option value="Gasto">Gasto</option>
+          </select>
+          <select id="filter-category"><option value="">Todas las categorías</option></select>
+          <select id="filter-subcategory"><option value="">Todas las subcategorías</option></select>
+          <input type="text" id="filter-concept" placeholder="Buscar por concepto..." />
+          <input type="date" id="filter-from" />
+          <input type="date" id="filter-to" />
+          <button id="clear-filters-btn">❌ Limpiar</button>
+        </div>
+
+        <table id="transactions-table">
+          <thead>
+            <tr>
+              <th data-field="id">ID</th>
+              <th data-field="date">Fecha</th>
+              <th data-field="amount">Importe</th>
+              <th data-field="account">Cuenta</th>
+              <th data-field="type">Tipo</th>
+              <th data-field="method">Método</th>
+              <th data-field="category">Categoría</th>
+              <th data-field="subcategory">Subcategoría</th>
+              <th data-field="concept">Concepto</th>
+              <th data-field="notes">Notas</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Vista de Cuentas -->
+    <section id="accounts-view" style="display: none;">
+      <div class="container">
+        <h2>💼 Cuentas</h2>
+        <button id="add-account-btn" class="control-btn">➕</button>
+
+        <div id="accounts-list" class="accounts-grid"></div>
+        <form id="add-account-form" style="display: none;">
+          <input type="hidden" id="account-id" />
+          <input type="text" id="account-name" placeholder="Nombre cuenta" required />
+          <input type="number" id="account-balance" placeholder="Saldo inicial" required />
+          <button type="submit">💾 Guardar cuenta</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Vista de Categorías -->
+    <section id="categories-view" style="display: none;">
+      <h2>🏷️ Categorías</h2>
+      <div class="categories-container">
+        <div class="category-column">
+          <div class="category-header">
+            <h3 class="expense-title">Gastos</h3>
+            <button class="add-category-btn" data-type="gasto">➕</button>
+          </div>
+          <div id="categorias-gastos"></div>
+        </div>
+
+        <div class="category-column">
+          <div class="category-header">
+            <h3 class="income-title">Ingresos</h3>
+            <button class="add-category-btn" data-type="ingreso">➕</button>
+          </div>
+          <div id="categorias-ingresos"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <script type="module" src="js/main.js"></script>
+
+</body>
+</html>
