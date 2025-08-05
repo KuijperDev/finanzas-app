@@ -6,6 +6,7 @@ import { renderAccounts, addAccount, updateAccount } from './accounts.js';
 import { renderCategories, setupCategoryEvents } from './ui-categories.js';
 import { getFilters, initFilters } from './filters.js';
 import { getActiveUser, addUser, deleteUser, setActiveUser, getUsers } from './user.js';
+//import { auth, db } from './firebase-init.js';
 
 // === TEMA OSCURO ===
 const themeToggleBtn = document.getElementById('theme-toggle');
