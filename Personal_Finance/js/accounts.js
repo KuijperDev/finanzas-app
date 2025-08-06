@@ -1,45 +1,66 @@
-import { saveAccounts, loadAccounts } from './storage.js';
-import { getTransactions } from './transactions.js'; // ⬅️ Asegúrate de tener esta línea arriba
+import {
+  loadAccounts,
+  saveAccount,
+  deleteAccount
+} from './storage.js';
 
+import { getTransactions } from './transactions.js';
 
 const accountsContainer = document.getElementById('accounts-list');
 const accountForm = document.getElementById('add-account-form');
 
-// === Obtener todas las cuentas ===
-export function getAccounts() {
-  return loadAccounts();
+let accounts = [];
+
+// Inicializar y renderizar cuentas desde Firestore (llama SIEMPRE a esta al entrar en la pestaña cuentas)
+export async function initAccounts(userId) {
+  accounts = await loadAccounts(userId);
+  renderAccounts(userId);
+  renderAccountOptionsInForm();
+  renderAccountOptionsInForm('filter-account');
 }
 
-// === Añadir una cuenta nueva ===
-export function addAccount(account) {
-  const accounts = getAccounts();
+// Devuelve el array actual de cuentas
+export async function getAccounts(userId) {
+  await initAccounts(userId);
+  return accounts;
+}
+
+// Añadir una cuenta nueva (guarda en Firestore y actualiza la lista)
+// Si no hay id, genera uno (puedes usar crypto.randomUUID() para evitar colisiones)
+export async function addAccount(account, userId) {
+  if (!account.id) {
+    account.id = crypto.randomUUID(); // Si quieres mantener IDs incrementales, usa generateAccountId()
+  }
+  await saveAccount(account, account.id, userId);
   accounts.push(account);
-  saveAccounts(accounts);
-  renderAccounts();
+  renderAccounts(userId);
+  renderAccountOptionsInForm(userId);
+  
 }
 
-// === Actualizar una cuenta existente ===
-export function updateAccount(updatedAccount) {
-  const accounts = getAccounts().map(acc =>
+// Actualiza una cuenta existente
+export async function updateAccount(updatedAccount, userId) {
+  await saveAccount(updatedAccount, updatedAccount.id, userId);
+  accounts = accounts.map(acc =>
     acc.id === updatedAccount.id ? updatedAccount : acc
   );
-  saveAccounts(accounts);
-  renderAccounts();
+  renderAccounts(userId);
+  renderAccountOptionsInForm(userId); 
 }
 
-// === Eliminar una cuenta ===
-export function deleteAccount(id) {
+// Elimina una cuenta
+export async function removeAccount(id, userId) {
   const confirmDelete = confirm("¿Estás seguro de eliminar esta cuenta?");
   if (!confirmDelete) return;
 
-  const accounts = getAccounts().filter(acc => acc.id !== id);
-  saveAccounts(accounts);
-  renderAccounts();
+  await deleteAccount(id, userId);
+  accounts = accounts.filter(acc => acc.id !== id);
+  renderAccounts(userId);
+  renderAccountOptionsInForm(userId); 
 }
 
-// === Renderizar todas las cuentas ===
-export function renderAccounts() {
-  const accounts = getAccounts();
+// Renderiza la lista de cuentas en la UI
+export function renderAccounts(userId) {
   const transactions = getTransactions();
   accountsContainer.innerHTML = '';
 
@@ -56,8 +77,8 @@ export function renderAccounts() {
     const card = document.createElement('div');
     card.className = 'account-card';
     const balanceColor =
-        currentBalance > 0 ? 'green' :
-        currentBalance < 0 ? 'red' : '#aaa'; // Gris si es 0
+      currentBalance > 0 ? 'green' :
+      currentBalance < 0 ? 'red' : '#aaa';
     card.innerHTML = `
       <p><strong>${account.name}</strong></p>
       <p><strong style="color: ${balanceColor};">${formatCurrency(currentBalance)}</strong></p>
@@ -83,21 +104,61 @@ export function renderAccounts() {
   document.querySelectorAll('.delete-account-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = btn.dataset.id;
-      deleteAccount(id);
+      removeAccount(id, userId);
     });
   });
 }
 
+// Formato moneda
 function formatCurrency(amount) {
   return typeof amount !== 'number' || isNaN(amount)
     ? '—'
     : amount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
 }
 
-// === Rellenar formulario con datos de cuenta para editar ===
+// Rellena el formulario para editar una cuenta
 function fillAccountForm(account) {
   document.getElementById('account-id').value = account.id;
   document.getElementById('account-name').value = account.name;
   document.getElementById('account-balance').value = account.initialBalance;
   accountForm.style.display = 'flex';
 }
+
+// (Opcional) Generar ID incremental local
+function generateAccountId() {
+  const maxId = accounts.reduce((max, acc) => Math.max(max, parseInt(acc.id) || 0), 0);
+  return String(maxId + 1);
+}
+
+export async function renderAccountOptionsInForm(selectId = 'cuenta', userId) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+
+  // Forzar carga desde Firestore si userId se pasa explícitamente
+  if (userId) {
+    accounts = await loadAccounts(userId);
+  }
+
+  const selectedValue = select.value;
+  select.innerHTML = '';
+
+  if (selectId === 'filter-account') {
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = 'Todas las cuentas';
+    select.appendChild(defaultOption);
+  }
+
+  accounts.forEach(account => {
+    const option = document.createElement('option');
+    option.value = account.name;
+    option.textContent = account.name;
+    select.appendChild(option);
+  });
+
+  if ([...select.options].some(opt => opt.value === selectedValue)) {
+    select.value = selectedValue;
+  }
+}
+
+

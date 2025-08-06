@@ -1,20 +1,11 @@
-import { saveTransactions } from './storage.js';
-import { renderTransactions } from './ui.js';
+import { importTransactionsToFirestore } from './firestore.js';
 
-function excelDateToDDMMYYYY(serial) {
-  const excelEpoch = new Date(1899, 11, 30);
-  const days = Math.floor(serial);
-  const msPerDay = 86400000;
-  const date = new Date(excelEpoch.getTime() + days * msPerDay);
-
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const year = date.getFullYear();
-
-  return `${day}/${month}/${year}`;
-}
-
-export function handleFileImport(file) {
+/**
+ * Importa un archivo Excel/CSV y sube los datos a Firestore bajo el usuario dado.
+ * @param {File} file - El archivo subido por el usuario.
+ * @param {string} userId - El UID de Firebase Auth del usuario actual.
+ */
+export function handleFileImport(file, userId) {
   const reader = new FileReader();
 
   reader.onload = (e) => {
@@ -108,10 +99,15 @@ export function handleFileImport(file) {
       return;
     }
 
-    saveTransactions(mapped);
-    renderTransactions();
-    alert('✅ Datos importados correctamente');
-    location.reload();
+    importTransactionsToFirestore(mapped, userId) // <-- CORREGIDO
+    .then(() => {
+      alert('✅ Datos importados correctamente');
+      location.reload(); // opcional, o renderTransactions() si es reactivo
+    })
+    .catch((error) => {
+      console.error('Error al importar a Firestore:', error);
+      alert('❌ Error al guardar los datos en la nube');
+    });
   };
 
   reader.readAsArrayBuffer(file);

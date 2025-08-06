@@ -4,33 +4,32 @@ import { renderTransactions } from './ui.js';
 export function setupForm() {
   const form = document.getElementById('transaction-form');
 
-  form.addEventListener('submit', function (e) {
+  if (!form) return; // Protección extra por si no existe
+
+  form.addEventListener('submit', async function (e) {
     e.preventDefault();
 
     const transaction = {
-      id: Date.now(),
-      date: document.getElementById('edit-date').value,
-      amount: parseFloat(document.getElementById('edit-amount').value),
-      account: document.getElementById('edit-account').value.trim(),
-      type: document.getElementById('edit-type').value,
-      method: document.getElementById('edit-method').value.trim(),
-      category: document.getElementById('edit-category').value.trim(),
-      subcategory: document.getElementById('edit-subcategory').value.trim(), // <--- NUEVO
-      concept: document.getElementById('edit-concept').value.trim(),
-      notes: document.getElementById('edit-notes').value.trim(),
+      date: document.getElementById('date').value,
+      description: document.getElementById('description').value.trim(),
+      amount: parseFloat(document.getElementById('amount').value),
+      category: document.getElementById('category').value,
+      type: document.getElementById('type').value,
     };
 
-
     if (
-      !transaction.date || isNaN(transaction.amount) ||
-      !transaction.account || !transaction.type || !transaction.concept
+      !transaction.date ||
+      isNaN(transaction.amount) ||
+      !transaction.category ||
+      !transaction.description ||
+      !transaction.type
     ) {
-      alert('Por favor completa los campos obligatorios.');
+      alert('Por favor completa todos los campos requeridos.');
       return;
     }
 
-    addTransaction(transaction);
-    renderTransactions();
+    await addTransaction(transaction);
+    await renderTransactions(); // si es async
     form.reset();
   });
 }

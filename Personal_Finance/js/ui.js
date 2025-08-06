@@ -1,15 +1,24 @@
 // ✅ Todos los imports deben ir arriba
-import { getTransactions, addTransaction, getNextId } from "./transactions.js";
+import { getTransactions, addTransaction, initTransactions, updateTransaction   } from "./transactions.js";
 import { getAccounts } from "./accounts.js";
 import { getCategories } from "./categories.js";
-import { saveTransactions } from "./storage.js";
+import { saveTransaction } from "./storage.js";
 import { getFilters } from "./filters.js";
+import { deleteTransaction } from "./storage.js";
 
 const tableBody = document.querySelector("#transactions-table tbody");
 const balance = document.getElementById("balance");
 
+let currentUserId = null;
+
+// Establecer el userId desde main.js
+export function setCurrentUserId(uid) {
+  currentUserId = uid;
+}
+
 // === Mostrar todas las transacciones ===
-export function renderTransactions() {
+export async function renderTransactions(userId) {
+  await initTransactions(userId);
   let transactions = getTransactions().slice();
 
   // Aplicar filtros
@@ -88,15 +97,16 @@ function formatCurrency(amount) {
 }
 
 // === Insertar nueva fila editable ===
-export function insertEditableRow() {
+export async function insertEditableRow(userId) {
+ 
   const existingRow = document.getElementById("editable-row");
   if (existingRow) {
-    // Simula hacer clic en el botón de cancelar
     const cancelBtn = document.getElementById("cancel-row-btn");
     if (cancelBtn) cancelBtn.click();
     return;
   }
-
+  const accounts = await getAccounts(userId);
+  const { ingresos, gastos } = await getCategories(userId);
   const row = document.createElement("tr");
   row.id = "editable-row";
   row.style.backgroundColor = "yellow";
@@ -112,9 +122,9 @@ export function insertEditableRow() {
     </td>
     <td>
       <select id="edit-account">
-        ${getAccounts()
-          .map((acc) => `<option value="${acc.name}">${acc.name}</option>`)
-          .join("")}
+        ${accounts && accounts.length
+        ? accounts.map(acc => `<option value="${acc.name}">${acc.name}</option>`).join("")
+        : '<option value="">-- Sin cuentas --</option>'}
       </select>
     </td>
     <td>
@@ -147,18 +157,18 @@ export function insertEditableRow() {
   const subcategorySelect = document.getElementById("edit-subcategory");
   const amountInput = document.getElementById("edit-amount");
 
-  typeSelect.addEventListener("change", () => {
-    fillCategoryOptions(typeSelect.value);
+  typeSelect.addEventListener("change", async () => {
+    await fillCategoryOptions(typeSelect.value, userId);
     adjustAmountSign();
   });
 
-  categorySelect.addEventListener("change", () => {
-    fillSubcategories(typeSelect.value, categorySelect.value);
+  categorySelect.addEventListener("change", async () => {
+    await fillSubcategories(typeSelect.value, categorySelect.value, userId);
   });
 
   amountInput.addEventListener("input", adjustAmountSign);
 
-  fillCategoryOptions(typeSelect.value); // Carga inicial
+  await fillCategoryOptions(typeSelect.value, userId); // Carga inicial
 
   function adjustAmountSign() {
     let value = parseFloat(amountInput.value);
@@ -171,8 +181,10 @@ export function insertEditableRow() {
     }
   }
 
-  function fillCategoryOptions(type) {
-    const { ingresos, gastos } = getCategories();
+  async function fillCategoryOptions(type, userId) {
+    const categories = await getCategories(userId);
+    const ingresos = categories.ingresos || [];
+    const gastos = categories.gastos || [];
     const list = type === "Ingreso" ? ingresos : gastos;
 
     categorySelect.innerHTML = '<option value="">-- Selecciona --</option>';
@@ -183,17 +195,18 @@ export function insertEditableRow() {
       categorySelect.appendChild(opt);
     });
 
-    subcategorySelect.innerHTML =
-      '<option value="">-- Selecciona categoría primero --</option>';
+    subcategorySelect.innerHTML = '<option value="">-- Selecciona categoría primero --</option>';
   }
 
-  function fillSubcategories(type, selectedCategoryName) {
-    const { ingresos, gastos } = getCategories();
+  async function fillSubcategories(type, selectedCategoryName, userId) {
+    const categories = await getCategories(userId);
+    const ingresos = categories.ingresos || [];
+    const gastos = categories.gastos || [];
     const list = type === "Ingreso" ? ingresos : gastos;
     const selected = list.find((c) => c.name === selectedCategoryName);
 
     subcategorySelect.innerHTML = '<option value="">-- Selecciona --</option>';
-    if (selected) {
+    if (selected && Array.isArray(selected.sub)) {
       selected.sub.forEach((sub) => {
         const opt = document.createElement("option");
         opt.value = sub;
@@ -205,7 +218,7 @@ export function insertEditableRow() {
 
   document.getElementById("save-row-btn").addEventListener("click", () => {
     const transaction = {
-      id: getNextId(),
+      id: crypto.randomUUID(),
       date: new Date(document.getElementById("edit-date").value)
         .toISOString()
         .split("T")[0],
@@ -239,9 +252,8 @@ export function insertEditableRow() {
       return;
     }
 
-    addTransaction(transaction);
-    renderTransactions();
-    // Restaurar texto del botón Añadir
+    addTransaction(transaction, userId);
+    renderTransactions(userId);
     const addBtn = document.getElementById("add-row-btn");
     if (addBtn) addBtn.textContent = "➕ ";
   });
@@ -252,38 +264,23 @@ export function insertEditableRow() {
     if (row) row.remove();
     if (actionRow) actionRow.remove();
 
-    // Restaurar texto del botón Añadir
     const addBtn = document.getElementById("add-row-btn");
     if (addBtn) addBtn.textContent = "➕ ";
   });
 }
 
+
+
 // === Tabla editable ===
-export function renderEditableTable() {
+export async function renderEditableTable(userId) {
   let transactions = getTransactions().slice();
-
-  // Aplicar filtros actuales (opcional si quieres que editen con filtros)
-  const filters = getFilters();
-  transactions = transactions.filter((tx) => {
-    if (filters.account && tx.account !== filters.account) return false;
-    if (filters.type && tx.type !== filters.type) return false;
-    if (filters.category && tx.category !== filters.category) return false;
-    if (filters.subcategory && tx.subcategory !== filters.subcategory)
-      return false;
-    if (filters.concept && !tx.concept.toLowerCase().includes(filters.concept))
-      return false;
-    const txDate = parseDate(tx.date);
-    if (filters.from && txDate < parseDate(filters.from)) return false;
-    if (filters.to && txDate > parseDate(filters.to)) return false;
-    return true;
-  });
-
-  // Ordenar igual que en renderTransactions
+  // ORDENAR TABLA
   if (currentSortField) {
     transactions.sort((a, b) => {
       let valA = a[currentSortField];
       let valB = b[currentSortField];
 
+      // Comparar numéricos o fechas
       if (currentSortField === "amount") {
         valA = parseFloat(valA);
         valB = parseFloat(valB);
@@ -304,201 +301,149 @@ export function renderEditableTable() {
     });
   }
 
+  // Obtén las cuentas
+  let accounts = await getAccounts(userId);
+  if (!Array.isArray(accounts)) accounts = [];
+
   tableBody.innerHTML = "";
 
   transactions.forEach((tx) => {
     const row = document.createElement("tr");
     row.innerHTML = `
       <td>${tx.id}</td>
-      <td><input type="date" value="${tx.date}" data-id="${
-      tx.id
-    }" data-field="date" /></td>
-      <td><input type="number" value="${tx.amount}" data-id="${
-      tx.id
-    }" data-field="amount" /></td>
+      <td><input type="date" value="${tx.date}" data-id="${tx.id}" data-field="date" /></td>
+      <td><input type="number" value="${tx.amount}" data-id="${tx.id}" data-field="amount" /></td>
       <td>
         <select data-id="${tx.id}" data-field="account">
-          ${getAccounts()
-            .map(
-              (acc) => `
-            <option value="${acc.name}" ${
-                acc.name === tx.account ? "selected" : ""
-              }>
+          ${accounts.map(acc => `
+            <option value="${acc.name}" ${acc.name === tx.account ? "selected" : ""}>
               ${acc.name}
-            </option>`
-            )
-            .join("")}
+            </option>
+          `).join("")}
         </select>
       </td>
       <td>
         <select data-id="${tx.id}" data-field="type">
-          <option value="Ingreso" ${
-            tx.type === "Ingreso" ? "selected" : ""
-          }>Ingreso</option>
-          <option value="Gasto" ${
-            tx.type === "Gasto" ? "selected" : ""
-          }>Gasto</option>
+          <option value="Ingreso" ${tx.type === "Ingreso" ? "selected" : ""}>Ingreso</option>
+          <option value="Gasto" ${tx.type === "Gasto" ? "selected" : ""}>Gasto</option>
         </select>
       </td>
-      <td><input type="text" value="${tx.method}" data-id="${
-      tx.id
-    }" data-field="method" /></td>
+      <td><input type="text" value="${tx.method || ""}" data-id="${tx.id}" data-field="method" /></td>
       <td>
-        <select data-id="${tx.id}" data-field="category" data-type="${
-      tx.type
-    }" class="category-select"></select>
+        <select data-id="${tx.id}" data-field="category" data-type="${tx.type}" class="category-select"></select>
       </td>
       <td>
-        <select data-id="${
-          tx.id
-        }" data-field="subcategory" class="subcategory-select"></select>
+        <select data-id="${tx.id}" data-field="subcategory" class="subcategory-select"></select>
       </td>
-      <td><input type="text" value="${tx.concept}" data-id="${
-      tx.id
-    }" data-field="concept" /></td>
-      <td><input type="text" value="${tx.notes}" data-id="${
-      tx.id
-    }" data-field="notes" /></td>
+      <td><input type="text" value="${tx.concept || ""}" data-id="${tx.id}" data-field="concept" /></td>
+      <td><input type="text" value="${tx.notes || ""}" data-id="${tx.id}" data-field="notes" /></td>
       <td>
-        <button class="delete-btn" data-id="${
-          tx.id
-        }" title="Eliminar">🗑️</button>
+        <button class="delete-btn" data-id="${tx.id}" title="Eliminar">🗑️</button>
       </td>
     `;
     tableBody.appendChild(row);
 
-    setupCategoryAndSubcategorySelect(tx);
+    // Rellena los combos al cargar la fila
+    setupCategoryAndSubcategorySelect(tx, userId);
 
-    // ✅ Actualizar categorías y subcategorías al cambiar el tipo
-    tableBody
-      .querySelectorAll('select[data-field="type"]')
-      .forEach((typeSelect) => {
-        typeSelect.addEventListener("change", () => {
-          const id = Number(typeSelect.dataset.id);
-          const newType = typeSelect.value;
+    // Listeners para actualizar en Firebase y combos
+    row.querySelectorAll('input, select').forEach(el => {
+      el.addEventListener('change', async (event) => {
+        const id = Number(event.target.dataset.id);
+        const field = event.target.dataset.field;
+        const value = event.target.value;
 
-          const tx = getTransactions().find((t) => t.id === id);
-          if (!tx) return;
+        // Busca la transacción y actualiza el campo editado
+        const txEdit = getTransactions().find(t => t.id === id);
+        if (!txEdit) return;
 
-          tx.type = newType;
+        if (field === "amount") {
+          txEdit.amount = value !== "" ? Number(value) : 0;
+          event.target.value = txEdit.amount; // Actualiza el input instantáneamente
+        } else {
+          txEdit[field] = value;
+        }
 
-          // Forzar actualización del signo del importe
-          const amountInput = tableBody.querySelector(
-            `input[data-id="${id}"][data-field="amount"]`
-          );
-          if (amountInput) {
-            let value = parseFloat(amountInput.value);
-            if (!isNaN(value)) {
-              if (newType === "Gasto" && value > 0)
-                amountInput.value = -Math.abs(value);
-              if (newType === "Ingreso" && value < 0)
-                amountInput.value = Math.abs(value);
-            }
-          }
+        // Si se cambia el tipo, ajusta el signo y actualiza los combos
+        if (field === "type") {
+          txEdit.amount = txEdit.type === "Gasto" ? -Math.abs(txEdit.amount) : Math.abs(txEdit.amount);
+          txEdit.category = "";      // Limpia la categoría
+          txEdit.subcategory = "";   // Limpia la subcategoría
+          await setupCategoryAndSubcategorySelect(txEdit, userId); // Actualiza combos según el nuevo tipo
+        }
 
-          // Volver a montar categorías y subcategorías
-          const categorySelect = tableBody.querySelector(
-            `select[data-id="${id}"][data-field="category"]`
-          );
-          const subcategorySelect = tableBody.querySelector(
-            `select[data-id="${id}"][data-field="subcategory"]`
-          );
-          const { ingresos, gastos } = getCategories();
-          const source = newType === "Ingreso" ? ingresos : gastos;
+        // Si se cambia la categoría, actualiza subcategorías
+        if (field === "category") {
+          txEdit.subcategory = ""; // Opcional: resetea subcategoría
+          await setupCategoryAndSubcategorySelect(txEdit, userId);
+        }
 
-          // Rellenar categorías
-          categorySelect.innerHTML = '<option value="">--</option>';
-          source.forEach((cat) => {
-            const option = document.createElement("option");
-            option.value = cat.name;
-            option.textContent = cat.name;
-            categorySelect.appendChild(option);
-          });
-
-          // Limpiar subcategorías
-          subcategorySelect.innerHTML = '<option value="">--</option>';
-
-          // Guardar cambios
-          autoSave(id, "type", newType);
-          autoSave(id, "category", "");
-          autoSave(id, "subcategory", "");
-        });
+        // Guarda el cambio en Firebase
+        await updateTransaction(txEdit, userId);
       });
-  });
-
-  // Escuchar clic en botones de eliminar
-  tableBody.querySelectorAll(".delete-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const id = Number(btn.dataset.id);
-      const confirmed = confirm(
-        `¿Seguro que deseas eliminar el registro con ID ${id}?`
-      );
-      if (!confirmed) return;
-
-      const txs = getTransactions().filter((tx) => tx.id !== id);
-      saveTransactions(txs);
-      renderEditableTable();
-      renderTransactions();
     });
-  });
 
-  attachAutoSaveListeners();
-}
-
-function setupCategoryAndSubcategorySelect(tx) {
-  const categorySelect = tableBody.querySelector(
-    `select[data-id="${tx.id}"][data-field="category"]`
-  );
-  const subcategorySelect = tableBody.querySelector(
-    `select[data-id="${tx.id}"][data-field="subcategory"]`
-  );
-  const { ingresos, gastos } = getCategories();
-  const list = tx.type === "Ingreso" ? ingresos : gastos;
-
-  // Categorías
-  categorySelect.innerHTML = '<option value="">--</option>';
-  list.forEach((cat) => {
-    const option = document.createElement("option");
-    option.value = cat.name;
-    option.textContent = cat.name;
-    if (tx.category === cat.name) option.selected = true;
-    categorySelect.appendChild(option);
-  });
-
-  // Subcategorías
-  const selectedCat = list.find((cat) => cat.name === tx.category);
-  subcategorySelect.innerHTML = '<option value="">--</option>';
-  if (selectedCat) {
-    selectedCat.sub.forEach((sub) => {
-      const option = document.createElement("option");
-      option.value = sub;
-      option.textContent = sub;
-      if (tx.subcategory === sub) option.selected = true;
-      subcategorySelect.appendChild(option);
-    });
-  }
-
-  // Cambio de categoría → actualizar subcategorías
-  categorySelect.addEventListener("change", () => {
-    const newCat = categorySelect.value;
-    const selected = list.find((cat) => cat.name === newCat);
-
-    subcategorySelect.innerHTML = '<option value="">--</option>';
-    if (selected) {
-      selected.sub.forEach((sub) => {
-        const option = document.createElement("option");
-        option.value = sub;
-        option.textContent = sub;
-        subcategorySelect.appendChild(option);
+    // Listener para subcategoría por si usas select dinámico (opcional, si no lo gestionas arriba)
+    const subcatSelect = row.querySelector('select[data-field="subcategory"]');
+    if (subcatSelect) {
+      subcatSelect.addEventListener('change', async (event) => {
+        const id = Number(event.target.dataset.id);
+        const value = event.target.value;
+        const txEdit = getTransactions().find(t => t.id === id);
+        if (!txEdit) return;
+        txEdit.subcategory = value;
+        await updateTransaction(txEdit, userId);
       });
     }
 
-    autoSave(tx.id, "category", newCat);
-    autoSave(tx.id, "subcategory", "");
+    // Listener para borrar
+    const deleteBtn = row.querySelector('.delete-btn');
+    if (deleteBtn) {
+  deleteBtn.addEventListener('click', async () => {
+    const seguro = window.confirm('¿Seguro que quieres borrar esta transacción? Esta acción no se puede deshacer.');
+    if (!seguro) return;
+    await deleteTransaction(tx.id, userId);
+    row.remove();
+    const idx = getTransactions().findIndex(t => t.id === tx.id);
+    if (idx !== -1) getTransactions().splice(idx, 1);
+  });
+}
+
+  });
+}
+
+// --- Función para rellenar combos correctamente ---
+// IMPORTANTE: debe ser async si llamas a getCategories(userId) que es async
+async function setupCategoryAndSubcategorySelect(tx, userId) {
+  const categoriesData = await getCategories(userId);
+  let source = tx.type === "Ingreso" ? categoriesData.ingresos : categoriesData.gastos;
+  if (!Array.isArray(source)) source = [];
+
+  const categorySelect = document.querySelector(`select[data-id="${tx.id}"][data-field="category"]`);
+  const subcategorySelect = document.querySelector(`select[data-id="${tx.id}"][data-field="subcategory"]`);
+
+  // Rellena categorías
+  categorySelect.innerHTML = '<option value="">--</option>';
+  source.forEach((cat) => {
+    const option = document.createElement("option");
+    option.value = cat.name;
+    option.textContent = cat.name;
+    if (cat.name === tx.category) option.selected = true;
+    categorySelect.appendChild(option);
   });
 
-  subcategorySelect.addEventListener("change", () => {
-    autoSave(tx.id, "subcategory", subcategorySelect.value);
+  // Rellena subcategorías según la categoría seleccionada
+  let selectedCategory = source.find(cat => cat.name === tx.category);
+  let subcategories = selectedCategory?.sub ?? []; // usa .sub de tu modelo
+  if (!Array.isArray(subcategories)) subcategories = [];
+
+  subcategorySelect.innerHTML = '<option value="">--</option>';
+  subcategories.forEach((subcat) => {
+    const option = document.createElement("option");
+    option.value = subcat;
+    option.textContent = subcat;
+    if (subcat === tx.subcategory) option.selected = true;
+    subcategorySelect.appendChild(option);
   });
 }
 
@@ -538,7 +483,7 @@ function autoSave(id, field, value) {
   }
 
   transactions[index][field] = value;
-  saveTransactions(transactions);
+  saveTransaction(transactions);
   console.log(
     `✅ Guardado automático: id ${id}, campo ${field}, valor ${value}`
   );
@@ -573,7 +518,7 @@ document
         currentSortDirection = "asc";
       }
 
-      renderTransactions(); // Vuelve a renderizar ordenado
+      renderTransactions(userId); // Vuelve a renderizar ordenado
     });
   });
 
@@ -594,7 +539,7 @@ headers.forEach((header) => {
       currentSortDirection = "asc";
     }
 
-    renderTransactions();
+    renderTransactions(currentUserId);
     updateSortIndicators();
   });
 });
@@ -623,3 +568,6 @@ function parseDate(dateStr) {
   const [year, month, day] = dateStr.split("-");
   return new Date(+year, +month - 1, +day);
 }
+
+
+

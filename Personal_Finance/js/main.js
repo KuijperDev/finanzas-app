@@ -1,12 +1,13 @@
 // === IMPORTACIONES ===
-import { renderTransactions, insertEditableRow, renderEditableTable, updateSortIndicators } from './ui.js';
+import { renderTransactions, insertEditableRow, renderEditableTable, updateSortIndicators, setCurrentUserId } from './ui.js';
 import { exportToCSV } from './export.js';
 import { handleFileImport } from './import.js';
-import { renderAccounts, addAccount, updateAccount } from './accounts.js';
+import { initAccounts, addAccount, updateAccount } from './accounts.js';
 import { renderCategories, setupCategoryEvents } from './ui-categories.js';
 import { getFilters, initFilters } from './filters.js';
-import { getActiveUser, addUser, deleteUser, setActiveUser, getUsers } from './user.js';
-//import { auth, db } from './firebase-init.js';
+import { registrarUsuario, iniciarSesion, cerrarSesion, escucharUsuario } from './auth.js';
+import { setupForm } from './form.js';
+
 
 // === TEMA OSCURO ===
 const themeToggleBtn = document.getElementById('theme-toggle');
@@ -14,10 +15,10 @@ const savedTheme = localStorage.getItem('theme');
 
 if (savedTheme === 'dark') {
   document.body.classList.add('dark-mode');
-  if(themeToggleBtn) themeToggleBtn.textContent = '☀️';
+  if (themeToggleBtn) themeToggleBtn.textContent = '☀️';
 }
 
-if(themeToggleBtn){
+if (themeToggleBtn) {
   themeToggleBtn.addEventListener('click', () => {
     document.body.classList.toggle('dark-mode');
     const isDark = document.body.classList.contains('dark-mode');
@@ -26,18 +27,18 @@ if(themeToggleBtn){
   });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  const usuarioActivo = getActiveUser();
+// === DETECTAR USUARIO ACTIVO (Firebase) ===
+escucharUsuario(user => {
   const loginContainer = document.getElementById('login-container');
   const appContainer = document.getElementById('app-container');
 
-  if (usuarioActivo) {
-    if(loginContainer) loginContainer.style.display = 'none';
-    if(appContainer) appContainer.style.display = 'block';
-    initApp();
+  if (user) {
+    if (loginContainer) loginContainer.style.display = 'none';
+    if (appContainer) appContainer.style.display = 'block';
+    initApp(user);
   } else {
-    if(loginContainer) loginContainer.style.display = 'flex';
-    if(appContainer) appContainer.style.display = 'none';
+    if (loginContainer) loginContainer.style.display = 'flex';
+    if (appContainer) appContainer.style.display = 'none';
     initLogin();
   }
 });
@@ -48,61 +49,45 @@ function initLogin() {
   const btnLogin = document.getElementById('btn-login');
   const btnAgregarLogin = document.getElementById('btn-agregar-usuario-login');
 
-  // Rellenar select usuarios
-  if (usuarioSelectLogin) {
-    const usuarios = getUsers();
-    usuarioSelectLogin.innerHTML = '';
-    usuarios.forEach(user => {
-      const option = document.createElement('option');
-      option.value = user;
-      option.textContent = user;
-      usuarioSelectLogin.appendChild(option);
-    });
-  }
+  if (usuarioSelectLogin) usuarioSelectLogin.style.display = 'none';
 
-  if(btnLogin){
-    btnLogin.addEventListener('click', () => {
-      const selectedUser = usuarioSelectLogin.value;
-      if (!selectedUser) {
-        alert('Selecciona un usuario para iniciar sesión.');
-        return;
-      }
-      setActiveUser(selectedUser);
-      location.reload();
-    });
-  }
+  if (btnLogin) {
+    btnLogin.addEventListener('click', async () => {
+      const email = prompt("Introduce tu email:");
+      const password = prompt("Introduce tu contraseña:");
 
-  if(btnAgregarLogin){
-    btnAgregarLogin.addEventListener('click', () => {
-      const username = nuevoUsuarioLogin.value.trim();
-      if (!username) {
-        alert('Introduce un nombre válido para el nuevo usuario.');
-        return;
+      try {
+        await iniciarSesion(email, password);
+        location.reload();
+      } catch (e) {
+        alert("Error al iniciar sesión: " + e.message);
       }
-      const usuarios = getUsers();
-      if (usuarios.includes(username)) {
-        alert('❌ Ese usuario ya existe.');
-        return;
+    });
+
+    btnAgregarLogin.addEventListener('click', async () => {
+      const email = nuevoUsuarioLogin.value.trim();
+      const password = prompt("Elige una contraseña");
+
+      try {
+        await registrarUsuario(email, password);
+        location.reload();
+      } catch (e) {
+        alert("Error al crear usuario: " + e.message);
       }
-      addUser(username);
-      setActiveUser(username);
-      location.reload();
     });
   }
 }
 
-function initApp() {
-  // Mostrar nombre usuario activo
+async function initApp(user) {
+  const userId = user.uid; // UID del usuario autenticado
+  setupForm(userId);
+  setCurrentUserId(userId);
+  await renderTransactions(userId);
   const span = document.getElementById('usuario-activo');
-  if(span) span.textContent = getActiveUser() || 'Sin usuario';
+  if (span) span.textContent = user.email || 'Usuario';
 
- 
-
-  // Botones menú usuario
   const userIcon = document.getElementById('user-icon');
   const userDropdown = document.getElementById('user-dropdown');
-  const addUserBtnDropdown = document.getElementById('btn-agregar-usuario');
-  const deleteUserBtnDropdown = document.getElementById('btn-eliminar-usuario');
   const logoutBtnDropdown = document.getElementById('btn-cerrar-sesion');
 
   if (userIcon && userDropdown) {
@@ -111,36 +96,16 @@ function initApp() {
     });
   }
 
- 
-
-  if (deleteUserBtnDropdown) {
-    deleteUserBtnDropdown.addEventListener('click', () => {
-      const user = getActiveUser();
-      if (!user) {
-        alert('❌ No hay usuario activo.');
-        return;
-      }
-      const confirmDelete = confirm(`¿Eliminar al usuario "${user}" y todos sus datos?`);
-      if (confirmDelete) {
-        deleteUser(user);
-        setActiveUser(null);
-        location.reload();
-      }
-    });
-  }
-
   if (logoutBtnDropdown) {
-    logoutBtnDropdown.addEventListener('click', () => {
-      setActiveUser(null);
+    logoutBtnDropdown.addEventListener('click', async () => {
+      await cerrarSesion();
       location.reload();
     });
   }
 
- 
-
   // Mostrar transacciones, filtros y más
-  renderTransactions();
-  initFilters(renderTransactions);
+  renderTransactions(userId);
+  initFilters(() => renderTransactions(userId), userId);
   updateSortIndicators();
 
   // Manejo de pestañas
@@ -152,7 +117,7 @@ function initApp() {
   const tabAccounts = document.getElementById('tab-accounts');
   const tabCategories = document.getElementById('tab-categories');
 
-  function activateTab(tabName) {
+  async function activateTab(tabName) {
     transactionsView.style.display = tabName === 'transactions' ? 'block' : 'none';
     accountsView.style.display = tabName === 'accounts' ? 'block' : 'none';
     categoriesView.style.display = tabName === 'categories' ? 'block' : 'none';
@@ -166,11 +131,12 @@ function initApp() {
     const addBtn = document.getElementById('add-row-btn');
     if (addBtn) addBtn.textContent = '➕';
 
-    if (tabName === 'accounts') renderAccounts();
+    if (tabName === 'accounts') await initAccounts(userId);
     if (tabName === 'categories') {
-      renderCategories();
-      setupCategoryEvents();
+      await renderCategories(userId);
+      setupCategoryEvents(userId);
     }
+    if (tabName === 'transactions') await initAccounts(userId);
   }
 
   tabTransactions.addEventListener('click', () => activateTab('transactions'));
@@ -180,7 +146,7 @@ function initApp() {
   const savedTab = localStorage.getItem('activeTab') || 'transactions';
   activateTab(savedTab);
 
-  // Botones principales (añadir transacción, editar tabla, exportar, importar...)
+  // Botones principales
   const addBtn = document.getElementById('add-row-btn');
   if (addBtn) {
     addBtn.addEventListener('click', () => {
@@ -189,7 +155,7 @@ function initApp() {
         document.getElementById('cancel-row-btn')?.click();
         addBtn.textContent = '➕';
       } else {
-        insertEditableRow();
+        insertEditableRow(userId);
         addBtn.textContent = '❌';
       }
     });
@@ -199,7 +165,7 @@ function initApp() {
   let isEditing = false;
   if (editBtn) {
     editBtn.addEventListener('click', () => {
-      isEditing ? renderTransactions() : renderEditableTable();
+      isEditing ? renderTransactions(userId) : renderEditableTable(userId);
       editBtn.textContent = isEditing ? '✏️' : '👁';
       isEditing = !isEditing;
     });
@@ -207,7 +173,7 @@ function initApp() {
 
   const exportBtn = document.getElementById('export-csv-btn');
   if (exportBtn) {
-    exportBtn.addEventListener('click', exportToCSV);
+    exportBtn.addEventListener('click', () => exportToCSV(userId));
   }
 
   const importBtn = document.getElementById('import-xlsx-btn');
@@ -217,7 +183,7 @@ function initApp() {
     fileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
-        handleFileImport(file);
+        handleFileImport(file, userId);
         fileInput.value = '';
       }
     });
@@ -249,9 +215,9 @@ function initApp() {
       const account = { id, name, initialBalance };
 
       if (document.getElementById('account-id').value) {
-        updateAccount(account);
+        updateAccount(account, userId);
       } else {
-        addAccount(account);
+        addAccount(account, userId);
       }
 
       accountForm.reset();
@@ -260,6 +226,5 @@ function initApp() {
     });
   }
 
-  // Inicializar filtros
   getFilters();
 }

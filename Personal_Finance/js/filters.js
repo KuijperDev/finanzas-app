@@ -1,5 +1,6 @@
 import { getAccounts } from './accounts.js';
 import { getCategories } from './categories.js';
+import { auth } from './firebase-init.js';
 
 export function getFilters() {
   return {
@@ -13,24 +14,34 @@ export function getFilters() {
   };
 }
 
-export function initFilters(onChangeCallback) {
-  // Llenar cuentas
-  const accountSelect = document.getElementById('filter-account');
-  getAccounts().forEach(acc => {
-    const opt = document.createElement('option');
-    opt.value = acc.name;
-    opt.textContent = acc.name;
-    accountSelect.appendChild(opt);
-  });
+export async function initFilters(onChangeCallback) {
+  const user = auth.currentUser;
+  if (!user) {
+    alert("Debes iniciar sesión para cargar los filtros.");
+    return;
+  }
 
-  // Llenar categorías/subcategorías según tipo
+  const userId = user.uid;
+
+  const accountSelect = document.getElementById('filter-account');
+  const accounts = await getAccounts(userId);
+  if (accountSelect) {
+    accounts.forEach(acc => {
+      const opt = document.createElement('option');
+      opt.value = acc.name;
+      opt.textContent = acc.name;
+      accountSelect.appendChild(opt);
+    });
+  }
+
   const categorySelect = document.getElementById('filter-category');
   const subcategorySelect = document.getElementById('filter-subcategory');
   const typeSelect = document.getElementById('filter-type');
+  const categories = await getCategories(userId);
 
   function updateCategoryOptions() {
     const type = typeSelect.value;
-    const { ingresos, gastos } = getCategories();
+    const { ingresos, gastos } = categories;
     const list = type === 'Ingreso' ? ingresos : type === 'Gasto' ? gastos : ingresos.concat(gastos);
 
     categorySelect.innerHTML = '<option value="">Todas las categorías</option>';
@@ -47,7 +58,7 @@ export function initFilters(onChangeCallback) {
   function updateSubcategoryOptions() {
     const type = typeSelect.value;
     const cat = categorySelect.value;
-    const { ingresos, gastos } = getCategories();
+    const { ingresos, gastos } = categories;
     const list = type === 'Ingreso' ? ingresos : type === 'Gasto' ? gastos : ingresos.concat(gastos);
 
     const selected = list.find(c => c.name === cat);
@@ -63,7 +74,6 @@ export function initFilters(onChangeCallback) {
     }
   }
 
-  // Escuchar cambios en todos los filtros
   ['filter-account', 'filter-type', 'filter-category', 'filter-subcategory', 'filter-concept', 'filter-from', 'filter-to'].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
@@ -75,10 +85,8 @@ export function initFilters(onChangeCallback) {
     }
   });
 
-  // Llenado inicial
   updateCategoryOptions();
 
-  // Botón para limpiar todos los filtros
   const clearBtn = document.getElementById('clear-filters-btn');
   if (clearBtn) {
     clearBtn.addEventListener('click', () => {
@@ -90,13 +98,9 @@ export function initFilters(onChangeCallback) {
       document.getElementById('filter-from').value = '';
       document.getElementById('filter-to').value = '';
 
-      updateCategoryOptions();     // Recargar categorías
-      updateSubcategoryOptions(); // Vaciar subcategorías
-
-      onChangeCallback();         // Volver a renderizar
+      updateCategoryOptions();
+      updateSubcategoryOptions();
+      onChangeCallback();
     });
   }
-
-
 }
-

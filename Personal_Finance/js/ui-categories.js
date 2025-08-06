@@ -1,12 +1,12 @@
 import { getCategories, addCategory, addSubcategory, deleteCategory, deleteSubcategory } from './categories.js';
 
-export function renderCategories() {
-  const { ingresos, gastos } = getCategories();
-  renderCategorySection('categorias-ingresos', ingresos, 'ingresos');
-  renderCategorySection('categorias-gastos', gastos, 'gastos');
+export async function renderCategories(userId) {
+  const { ingresos, gastos } = await getCategories(userId);
+  renderCategorySection('categorias-ingresos', ingresos, 'ingresos', userId);
+  renderCategorySection('categorias-gastos', gastos, 'gastos', userId);
 }
 
-function renderCategorySection(containerId, list, type) {
+function renderCategorySection(containerId, list, type, userId) {
   const container = document.getElementById(containerId);
   container.innerHTML = '';
 
@@ -27,11 +27,11 @@ function renderCategorySection(containerId, list, type) {
     const addSubBtn = document.createElement('button');
     addSubBtn.textContent = '➕';
     addSubBtn.classList.add('add-subcategory-btn');
-    addSubBtn.addEventListener('click', () => {
+    addSubBtn.addEventListener('click', async () => {
       const sub = prompt(`Nombre del subgrupo para "${cat.name}":`);
       if (sub) {
-        addSubcategory(type, cat.name, sub);
-        renderCategories();
+        await addSubcategory(type, cat.name, sub, userId);
+        await renderCategories(userId);
       }
     });
 
@@ -42,10 +42,10 @@ function renderCategorySection(containerId, list, type) {
     deleteCatBtn.style.background = 'transparent';
     deleteCatBtn.style.border = 'none';
     deleteCatBtn.style.color = 'red';
-    deleteCatBtn.addEventListener('click', () => {
+    deleteCatBtn.addEventListener('click', async () => {
       if (confirm(`¿Eliminar la categoría "${cat.name}" y todos sus subgrupos?`)) {
-        deleteCategory(type, cat.name);
-        renderCategories();
+        await deleteCategory(type, cat.name, userId);
+        await renderCategories(userId);
       }
     });
 
@@ -73,10 +73,10 @@ function renderCategorySection(containerId, list, type) {
       delBtn.style.border = 'none';
       delBtn.style.color = 'red';
 
-      delBtn.addEventListener('click', () => {
+      delBtn.addEventListener('click', async () => {
         if (confirm(`¿Eliminar el subgrupo "${sub}" de "${cat.name}"?`)) {
-          deleteSubcategory(type, cat.name, sub);
-          renderCategories();
+          await deleteSubcategory(type, cat.name, sub, userId);
+          await renderCategories(userId);
         }
       });
 
@@ -89,32 +89,20 @@ function renderCategorySection(containerId, list, type) {
     container.appendChild(catDiv);
   });
 }
-
-
-export function setupCategoryEvents() {
-  // Añadir categorías
-  document.querySelectorAll('.add-category-btn').forEach(button => {
-    button.addEventListener('click', () => {
-      const tipo = button.dataset.type; // 'gasto' o 'ingreso'
+let categoryEventsSetup = false;
+export function setupCategoryEvents(userId) {
+  // Delegación para botón ➕ de nueva categoría
+  if (categoryEventsSetup) return;
+  categoryEventsSetup = true;
+  document.body.addEventListener('click', async (e) => {
+    const target = e.target;
+    if (target.classList.contains('add-category-btn')) {
+      const tipo = target.dataset.type; // 'gasto' o 'ingreso'
       const nombre = prompt(`Nombre de la nueva categoría de ${tipo}:`);
       if (nombre) {
-        addCategory(tipo === 'gasto' ? 'gastos' : 'ingresos', nombre);
-        renderCategories();
+        await addCategory(tipo === 'gasto' ? 'gastos' : 'ingresos', nombre, userId);
+        await renderCategories(userId);
       }
-    });
-  });
-
-  // Añadir subcategorías
-  document.querySelectorAll('.add-subcategory-btn').forEach(button => {
-    button.addEventListener('click', () => {
-      const tipo = button.dataset.type; // 'gasto' o 'ingreso'
-      const padre = prompt(`¿A qué categoría de ${tipo} quieres añadir un subgrupo?`);
-      const sub = prompt(`Nombre del subgrupo:`);
-      if (padre && sub) {
-        addSubcategory(tipo === 'gasto' ? 'gastos' : 'ingresos', padre, sub);
-        renderCategories();
-      }
-    });
+    }
   });
 }
-
