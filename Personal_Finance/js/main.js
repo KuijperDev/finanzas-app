@@ -7,7 +7,9 @@ import { renderCategories, setupCategoryEvents } from './ui-categories.js';
 import { getFilters, initFilters } from './filters.js';
 import { registrarUsuario, iniciarSesion, cerrarSesion, escucharUsuario } from './auth.js';
 import { setupForm } from './form.js';
+import { addCategory, addSubcategory, deleteCategory, deleteSubcategory } from './categories.js';
 
+let currentUserId = null; // 👈 DECLARA GLOBAL
 
 // === TEMA OSCURO ===
 const themeToggleBtn = document.getElementById('theme-toggle');
@@ -44,35 +46,24 @@ escucharUsuario(user => {
 });
 
 function initLogin() {
-  const usuarioSelectLogin = document.getElementById('usuario-select-login');
-  const nuevoUsuarioLogin = document.getElementById('nuevo-usuario-login');
-  const btnLogin = document.getElementById('btn-login');
-  const btnAgregarLogin = document.getElementById('btn-agregar-usuario-login');
+  const loginForm = document.getElementById('login-form');
+  const loginError = document.getElementById('login-error');
 
-  if (usuarioSelectLogin) usuarioSelectLogin.style.display = 'none';
+  if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
 
-  if (btnLogin) {
-    btnLogin.addEventListener('click', async () => {
-      const email = prompt("Introduce tu email:");
-      const password = prompt("Introduce tu contraseña:");
+      loginError.style.display = 'none';
+      loginError.textContent = '';
 
       try {
         await iniciarSesion(email, password);
         location.reload();
       } catch (e) {
-        alert("Error al iniciar sesión: " + e.message);
-      }
-    });
-
-    btnAgregarLogin.addEventListener('click', async () => {
-      const email = nuevoUsuarioLogin.value.trim();
-      const password = prompt("Elige una contraseña");
-
-      try {
-        await registrarUsuario(email, password);
-        location.reload();
-      } catch (e) {
-        alert("Error al crear usuario: " + e.message);
+        loginError.textContent = "Error al iniciar sesión: " + e.message;
+        loginError.style.display = 'block';
       }
     });
   }
@@ -80,6 +71,7 @@ function initLogin() {
 
 async function initApp(user) {
   const userId = user.uid; // UID del usuario autenticado
+  currentUserId = userId;  // 👈 ASIGNA GLOBAL
   setupForm(userId);
   setCurrentUserId(userId);
   await renderTransactions(userId);
@@ -227,4 +219,111 @@ async function initApp(user) {
   }
 
   getFilters();
+
+  // MODAL CATEGORÍA
+  document.querySelectorAll('.add-category-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('input-categoria-tipo').value = btn.dataset.type;
+      document.getElementById('form-categoria').reset();
+      document.getElementById('categoria-error').style.display = 'none';
+      document.getElementById('modal-categoria').classList.remove('hidden');
+    });
+  });
+
+  document.getElementById('form-categoria').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const nombre = document.getElementById('input-categoria-nombre').value.trim();
+    const tipo = document.getElementById('input-categoria-tipo').value;
+    const errorBox = document.getElementById('categoria-error');
+    errorBox.style.display = 'none';
+    if (!nombre) {
+      errorBox.textContent = "El nombre es obligatorio.";
+      errorBox.style.display = 'block';
+      return;
+    }
+    try {
+      console.log('Tipo:', tipo, 'Nombre:', nombre, 'UserId:', currentUserId);
+      await addCategory(tipo, nombre, currentUserId);
+      document.getElementById('modal-categoria').classList.add('hidden');
+      await renderCategories(currentUserId);
+    } catch (err) {
+      errorBox.textContent = "Error: " + err.message;
+      errorBox.style.display = 'block';
+    }
+  });
+
+  document.getElementById('btn-categoria-cancelar').addEventListener('click', () => {
+    document.getElementById('modal-categoria').classList.add('hidden');
+  });
+
+  // MODAL SUBCATEGORÍA
+  document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('add-subcategory-btn')) {
+      document.getElementById('input-subcategoria-tipo').value = e.target.dataset.type;
+      document.getElementById('input-subcategoria-padre').value = e.target.dataset.parent;
+      document.getElementById('form-subcategoria').reset();
+      document.getElementById('subcategoria-error').style.display = 'none';
+      document.getElementById('modal-subcategoria').classList.remove('hidden');
+    }
+  });
+
+  document.getElementById('form-subcategoria').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const nombre = document.getElementById('input-subcategoria-nombre').value.trim();
+    const tipo = document.getElementById('input-subcategoria-tipo').value;
+    const padre = document.getElementById('input-subcategoria-padre').value;
+    const errorBox = document.getElementById('subcategoria-error');
+    errorBox.style.display = 'none';
+    if (!nombre) {
+      errorBox.textContent = "El nombre es obligatorio.";
+      errorBox.style.display = 'block';
+      return;
+    }
+    try {
+      await addSubcategory(tipo, padre, nombre, currentUserId);
+      document.getElementById('modal-subcategoria').classList.add('hidden');
+      await renderCategories(currentUserId);
+    } catch (err) {
+      errorBox.textContent = "Error: " + err.message;
+      errorBox.style.display = 'block';
+    }
+  });
+
+  document.getElementById('btn-subcategoria-cancelar').addEventListener('click', () => {
+    document.getElementById('modal-subcategoria').classList.add('hidden');
+  });
+
+  // MODAL ELIMINAR (categoría o subcategoría)
+  let eliminarTipo = null, eliminarNombre = null, eliminarPadre = null;
+  document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('delete-category-btn')) {
+      eliminarTipo = e.target.dataset.type;
+      eliminarNombre = e.target.dataset.name;
+      eliminarPadre = null;
+      document.getElementById('modal-eliminar-title').textContent = '¿Eliminar categoría?';
+      document.getElementById('modal-eliminar-text').textContent = `Se eliminará la categoría "${eliminarNombre}" y sus subcategorías.`;
+      document.getElementById('modal-eliminar').classList.remove('hidden');
+    }
+    if (e.target.classList.contains('delete-subcategory-btn')) {
+      eliminarTipo = e.target.dataset.type;
+      eliminarPadre = e.target.dataset.parent;
+      eliminarNombre = e.target.dataset.name;
+      document.getElementById('modal-eliminar-title').textContent = '¿Eliminar subcategoría?';
+      document.getElementById('modal-eliminar-text').textContent = `Se eliminará la subcategoría "${eliminarNombre}" de "${eliminarPadre}".`;
+      document.getElementById('modal-eliminar').classList.remove('hidden');
+    }
+  });
+  document.getElementById('btn-eliminar-confirmar').addEventListener('click', async () => {
+    if (eliminarTipo && eliminarNombre && !eliminarPadre) {
+      await deleteCategory(eliminarTipo, eliminarNombre, currentUserId);
+    } else if (eliminarTipo && eliminarPadre && eliminarNombre) {
+      await deleteSubcategory(eliminarTipo, eliminarPadre, eliminarNombre, currentUserId);
+    }
+    document.getElementById('modal-eliminar').classList.add('hidden');
+    await renderCategories(currentUserId);
+  });
+  document.getElementById('btn-eliminar-cancelar').addEventListener('click', () => {
+    document.getElementById('modal-eliminar').classList.add('hidden');
+  });
+
 }

@@ -1,11 +1,61 @@
-import { getCategories, addCategory, addSubcategory, deleteCategory, deleteSubcategory } from './categories.js';
+import { getCategories } from './categories.js';
 
 export async function renderCategories(userId) {
-  const { ingresos, gastos } = await getCategories(userId);
-  renderCategorySection('categorias-ingresos', ingresos, 'ingresos', userId);
-  renderCategorySection('categorias-gastos', gastos, 'gastos', userId);
+  const data = await getCategories(userId);
+  const gastosCont = document.getElementById('categorias-gastos');
+  const ingresosCont = document.getElementById('categorias-ingresos');
+  gastosCont.innerHTML = '';
+  ingresosCont.innerHTML = '';
+
+  // Render gastos
+  data.gastos.forEach(cat => {
+    const catEl = document.createElement('div');
+    catEl.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span><strong>${cat.name}</strong></span>
+        <div>
+          <button class="add-subcategory-btn" data-type="gasto" data-parent="${cat.name}">➕ Subcat.</button>
+          <button class="delete-category-btn" data-type="gasto" data-name="${cat.name}">🗑️</button>
+        </div>
+      </div>
+      <ul>
+        ${(cat.sub||[]).map(sub => `
+          <li style="margin-left:1.2em;">
+            ${sub}
+            <button class="delete-subcategory-btn" data-type="gasto" data-parent="${cat.name}" data-name="${sub}">🗑️</button>
+          </li>
+        `).join('')}
+      </ul>
+    `;
+    gastosCont.appendChild(catEl);
+  });
+
+  // Render ingresos
+  data.ingresos.forEach(cat => {
+    const catEl = document.createElement('div');
+    catEl.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span><strong>${cat.name}</strong></span>
+        <div>
+          <button class="add-subcategory-btn" data-type="ingreso" data-parent="${cat.name}">➕ Subcat.</button>
+          <button class="delete-category-btn" data-type="ingreso" data-name="${cat.name}">🗑️</button>
+        </div>
+      </div>
+      <ul>
+        ${(cat.sub||[]).map(sub => `
+          <li style="margin-left:1.2em;">
+            ${sub}
+            <button class="delete-subcategory-btn" data-type="ingreso" data-parent="${cat.name}" data-name="${sub}">🗑️</button>
+          </li>
+        `).join('')}
+      </ul>
+    `;
+    ingresosCont.appendChild(catEl);
+  });
 }
 
+// Esta función ya NO se usa, pero si la necesitas como plantilla,
+// aquí está adaptada para modales visuales (sin prompt/confirm):
 function renderCategorySection(containerId, list, type, userId) {
   const container = document.getElementById(containerId);
   container.innerHTML = '';
@@ -27,27 +77,14 @@ function renderCategorySection(containerId, list, type, userId) {
     const addSubBtn = document.createElement('button');
     addSubBtn.textContent = '➕';
     addSubBtn.classList.add('add-subcategory-btn');
-    addSubBtn.addEventListener('click', async () => {
-      const sub = prompt(`Nombre del subgrupo para "${cat.name}":`);
-      if (sub) {
-        await addSubcategory(type, cat.name, sub, userId);
-        await renderCategories(userId);
-      }
-    });
+    addSubBtn.setAttribute('data-type', type);
+    addSubBtn.setAttribute('data-parent', cat.name);
 
     const deleteCatBtn = document.createElement('button');
     deleteCatBtn.textContent = '🗑️';
-    deleteCatBtn.style.marginLeft = '10px';
-    deleteCatBtn.style.cursor = 'pointer';
-    deleteCatBtn.style.background = 'transparent';
-    deleteCatBtn.style.border = 'none';
-    deleteCatBtn.style.color = 'red';
-    deleteCatBtn.addEventListener('click', async () => {
-      if (confirm(`¿Eliminar la categoría "${cat.name}" y todos sus subgrupos?`)) {
-        await deleteCategory(type, cat.name, userId);
-        await renderCategories(userId);
-      }
-    });
+    deleteCatBtn.classList.add('delete-category-btn');
+    deleteCatBtn.setAttribute('data-type', type);
+    deleteCatBtn.setAttribute('data-name', cat.name);
 
     actions.appendChild(addSubBtn);
     actions.appendChild(deleteCatBtn);
@@ -57,7 +94,7 @@ function renderCategorySection(containerId, list, type, userId) {
     catDiv.appendChild(titleRow);
 
     const subList = document.createElement('ul');
-    cat.sub.forEach(sub => {
+    (cat.sub || []).forEach(sub => {
       const li = document.createElement('li');
       li.style.display = 'flex';
       li.style.justifyContent = 'space-between';
@@ -68,17 +105,10 @@ function renderCategorySection(containerId, list, type, userId) {
 
       const delBtn = document.createElement('button');
       delBtn.textContent = '🗑️';
-      delBtn.style.cursor = 'pointer';
-      delBtn.style.background = 'transparent';
-      delBtn.style.border = 'none';
-      delBtn.style.color = 'red';
-
-      delBtn.addEventListener('click', async () => {
-        if (confirm(`¿Eliminar el subgrupo "${sub}" de "${cat.name}"?`)) {
-          await deleteSubcategory(type, cat.name, sub, userId);
-          await renderCategories(userId);
-        }
-      });
+      delBtn.classList.add('delete-subcategory-btn');
+      delBtn.setAttribute('data-type', type);
+      delBtn.setAttribute('data-parent', cat.name);
+      delBtn.setAttribute('data-name', sub);
 
       li.appendChild(nameSpan);
       li.appendChild(delBtn);
@@ -89,7 +119,9 @@ function renderCategorySection(containerId, list, type, userId) {
     container.appendChild(catDiv);
   });
 }
+
 let categoryEventsSetup = false;
+
 export function setupCategoryEvents(userId) {
   // Delegación para botón ➕ de nueva categoría
   if (categoryEventsSetup) return;
@@ -97,12 +129,10 @@ export function setupCategoryEvents(userId) {
   document.body.addEventListener('click', async (e) => {
     const target = e.target;
     if (target.classList.contains('add-category-btn')) {
-      const tipo = target.dataset.type; // 'gasto' o 'ingreso'
-      const nombre = prompt(`Nombre de la nueva categoría de ${tipo}:`);
-      if (nombre) {
-        await addCategory(tipo === 'gasto' ? 'gastos' : 'ingresos', nombre, userId);
-        await renderCategories(userId);
-      }
+      // Solo dispara el modal visual, NO prompt ni confirm
+      // El modal se gestiona en main.js
+      // Si quieres refrescar la UI al crear, ya lo haces tras submit del modal
+      await renderCategories(userId);
     }
   });
 }
