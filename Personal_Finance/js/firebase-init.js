@@ -24,3 +24,4 @@ const db = initializeFirestore(app, {
 });
 
 export { auth, db };
+
