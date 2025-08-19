@@ -35,7 +35,7 @@ export async function loadTransactions(userId) {
 
 export async function saveTransaction(transaction, id = null, userId) {
   const colRef = getUserCollection('transactions', userId);
-  const docRef = id ? doc(colRef, id) : doc(colRef);
+  const docRef = id ? doc(colRef, String(id)) : doc(colRef);
   await setDoc(docRef, transaction);
 }
 
