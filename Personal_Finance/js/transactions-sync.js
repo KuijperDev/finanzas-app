@@ -25,7 +25,7 @@ export async function updateTransaction(tx, userId) {
 
 // Eliminar transacción local + sync
 export async function removeTransaction(id, userId) {
-  await db.transacciones.where('userId').equals(userId).and(tx => tx.id === id).delete();
+  await db.transacciones.where('userId').equals(userId).and(tx => String(tx.id) === String(id)).delete();
   try {
     await remoteDeleteTransaction(id, userId);
   } catch (e) {
