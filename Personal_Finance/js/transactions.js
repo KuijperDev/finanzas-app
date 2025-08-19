@@ -31,10 +31,10 @@ export async function addTransaction(transaction, userId) {
 }
 
 // Eliminar transacción
-export async function removeTransaction(id, userId) {
-  await db.transacciones.where('userId').equals(userId).and(tx => tx.id === id).delete();
-  transactions = transactions.filter(tx => tx.id !== id);
-}
+//export async function removeTransaction(id, userId) {
+ // await db.transacciones.where('userId').equals(userId).and(tx => tx.id === id).delete();
+ // transactions = transactions.filter(tx => tx.id !== id);
+//}
 
 // Actualizar una transacción existente
 export async function updateTransaction(updatedTx, userId) {
