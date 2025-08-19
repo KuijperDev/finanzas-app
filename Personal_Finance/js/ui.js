@@ -356,7 +356,8 @@ export async function renderEditableTable(userId) {
         const value = event.target.value;
 
         // Busca la transacción y actualiza el campo editado
-        const txEdit = await getTransactions(userId).find(t => t.id === id);
+        const transactions = await getTransactions(userId);
+        const txEdit = transactions.find(t => t.id === id);
         if (!txEdit) return;
 
         if (field === "amount") {
