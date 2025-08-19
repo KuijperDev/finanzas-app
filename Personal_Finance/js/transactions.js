@@ -17,14 +17,14 @@ export function getTransactions() {
 }
 
 // Generar ID incremental numérico
-function getNextTransactionId() {
+function getNextTransactionId(userId) {
   if (!transactions.length) return 1;
   return Math.max(...transactions.map(tx => Number(tx.id) || 0)) + 1;
 }
 
 // Añadir una nueva transacción
 export async function addTransaction(transaction, userId) {
-  const id = getNextTransactionId();
+  const id = getNextTransactionId(userId);
   const tx = { ...transaction, id };
   await saveTransaction(tx, String(id), userId);
   transactions.push(tx);
