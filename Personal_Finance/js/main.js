@@ -74,7 +74,7 @@ function initLogin() {
 async function initApp(user) {
   const userId = user.uid; // UID del usuario autenticado
   currentUserId = userId;  // 👈 ASIGNA GLOBAL
-  
+  window.currentUserId = user.uid;
   // Al iniciar, intenta sincronizar pendientes:
   await syncPendingCategories(user.uid);
 
