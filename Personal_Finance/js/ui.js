@@ -356,7 +356,7 @@ export async function renderEditableTable(userId) {
         const value = event.target.value;
 
         // Busca la transacción y actualiza el campo editado
-        const txEdit = getTransactions().find(t => t.id === id);
+        const txEdit = await getTransactions(userId).find(t => t.id === id);
         if (!txEdit) return;
 
         if (field === "amount") {
@@ -391,7 +391,7 @@ export async function renderEditableTable(userId) {
       subcatSelect.addEventListener('change', async (event) => {
         const id = Number(event.target.dataset.id);
         const value = event.target.value;
-        const txEdit = getTransactions().find(t => t.id === id);
+        const txEdit = await getTransactions(userId).find(t => t.id === id);
         if (!txEdit) return;
         txEdit.subcategory = value;
         await updateTransaction(txEdit, userId);
@@ -473,7 +473,7 @@ function attachAutoSaveListeners() {
 }
 
 function autoSave(id, field, value) {
-  const transactions = getTransactions();
+  const transactions = getTransactions(userId);
   const index = transactions.findIndex((tx) => tx.id === id);
   if (index === -1) return;
 
