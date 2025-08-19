@@ -1,7 +1,5 @@
 import { getCategories, saveCategoriesLocal } from './categories-sync.js';
 
-const userId = window.currentUserId;
-
 export async function renderCategories(userId) {
   const data = await getCategories(userId);
   const gastosCont = document.getElementById('categorias-gastos');
@@ -141,6 +139,7 @@ export function setupCategoryEvents(userId) {
 
 // Exportar categorías
 document.getElementById('export-categories-btn').addEventListener('click', async () => {
+  const userId = window.currentUserId || (window.firebaseUser && window.firebaseUser.uid);
   const data = await getCategories(userId);
   const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
   const url = URL.createObjectURL(blob);
@@ -157,6 +156,7 @@ document.getElementById('import-categories-btn').addEventListener('click', () =>
 });
 
 document.getElementById('import-categories-file').addEventListener('change', async (e) => {
+  const userId = window.currentUserId || (window.firebaseUser && window.firebaseUser.uid);
   const file = e.target.files[0];
   if (!file) return;
   const text = await file.text();
