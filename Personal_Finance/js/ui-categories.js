@@ -139,7 +139,7 @@ export function setupCategoryEvents(userId) {
 
 // Exportar categorías
 document.getElementById('export-categories-btn').addEventListener('click', async () => {
-  const userId = localStorage.getItem('usuarioActual');
+  const userId = currentUserId;
   const data = await getCategories(userId);
   const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
   const url = URL.createObjectURL(blob);
@@ -162,7 +162,7 @@ document.getElementById('import-categories-file').addEventListener('change', asy
   let data;
   try {
     data = JSON.parse(text);
-    const userId = localStorage.getItem('usuarioActual');
+    const userId = currentUserId;
     await saveCategoriesLocal(data, userId); // Adapta si usas otro nombre de función
     alert('Categorías importadas correctamente');
     await renderCategories(userId);
