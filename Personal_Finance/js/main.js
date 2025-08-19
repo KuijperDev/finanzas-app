@@ -180,7 +180,7 @@ async function initApp(user) {
 
   const exportBtn = document.getElementById('export-csv-btn');
   if (exportBtn) {
-    exportBtn.addEventListener('click', () => exportToCSV(userId));
+    exportBtn.addEventListener('click', async () => exportToCSV(userId));
   }
 
   const importBtn = document.getElementById('import-xlsx-btn');

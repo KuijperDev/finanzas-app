@@ -219,7 +219,7 @@ export async function insertEditableRow(userId) {
 
   document.getElementById("save-row-btn").addEventListener("click", () => {
     const transaction = {
-      id: crypto.randomUUID(),
+      //id: crypto.randomUUID(),
       date: new Date(document.getElementById("edit-date").value)
         .toISOString()
         .split("T")[0],

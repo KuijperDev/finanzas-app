@@ -1,7 +1,7 @@
 import { getTransactions } from './transactions-sync.js';
 
-export function exportToCSV() {
-  const transactions = getTransactions();
+export async function exportToCSV() {
+  const transactions = await getTransactions(userId);
   if (!transactions.length) return alert('No hay datos para exportar.');
 
   const headers = ['ID', 'Fecha', 'Importe', 'Cuenta', 'Tipo', 'Modo', 'Categoría', 'Subcategoría', 'Concepto', 'Movimiento'];

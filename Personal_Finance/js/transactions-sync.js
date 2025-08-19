@@ -1,8 +1,17 @@
 import db from './db-local.js';
 import { saveTransaction as remoteSaveTransaction, deleteTransaction as remoteDeleteTransaction, loadTransactions as remoteLoadTransactions } from './storage.js';
 
+async function getNextTransactionId(userId) {
+  const txs = await db.transacciones.where('userId').equals(userId).toArray();
+  if (!txs.length) return 1;
+  return Math.max(...txs.map(tx => Number(tx.id) || 0)) + 1;
+}
+
 // Añadir transacción local + sync
 export async function addTransaction(tx, userId) {
+  if (!tx.id) {
+    tx.id = await getNextTransactionId(userId);
+  }
   await db.transacciones.put({ ...tx, syncStatus: 'pending', userId });
   try {
     await remoteSaveTransaction(tx, tx.id, userId);
