@@ -40,7 +40,7 @@ export async function getTransactions(userId) {
   if (localTxs.length > 0) return localTxs.filter(tx => tx.syncStatus !== 'pending_delete');  
   try {
     const remoteTxs = await remoteLoadTransactions(userId);
-    await db.transacciones.clear();
+    await db.transacciones.where('userId').equals(userId).delete();
     for (const tx of remoteTxs) {
       await db.transacciones.put({ ...tx, syncStatus: 'synced', userId });
     }

@@ -6,3 +6,4 @@ db.version(2).stores({
   transacciones: '++id,fecha,monto,tipo,cuenta,categoria,subcategoria,concepto,notes,syncStatus,userId'
 });
 export default db;
+

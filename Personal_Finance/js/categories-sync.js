@@ -18,7 +18,7 @@ export async function getCategories(userId) {
   try {
     const remoteCats = await remoteGetCategories(userId);
     // Sincronizamos a local
-    await db.categorias.clear();
+    await db.categorias.where('userId').equals(userId).delete();
     for (const cat of remoteCats.ingresos) {
       await db.categorias.put({ ...cat, type: 'ingreso', syncStatus: 'synced', userId });
     }

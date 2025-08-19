@@ -8,6 +8,8 @@ import { getFilters, initFilters } from './filters.js';
 import { registrarUsuario, iniciarSesion, cerrarSesion, escucharUsuario } from './auth.js';
 import { setupForm } from './form.js';
 
+import db from './db-local.js';
+
 import { addAccount, updateAccount, removeAccount, getAccounts, syncPendingAccounts } from './accounts-sync.js';
 import { addCategory, addSubcategory, deleteCategory, deleteSubcategory, getCategories, syncPendingCategories } from './categories-sync.js';
 
@@ -31,12 +33,19 @@ if (themeToggleBtn) {
   });
 }
 
+async function cleanAllExcept(userId) {
+  await db.categorias.where('userId').notEqual(userId).delete();
+  await db.transacciones.where('userId').notEqual(userId).delete();
+  await db.cuentas.where('userId').notEqual(userId).delete();
+}
+
 // === DETECTAR USUARIO ACTIVO (Firebase) ===
-escucharUsuario(user => {
+escucharUsuario(async user => {
   const loginContainer = document.getElementById('login-container');
   const appContainer = document.getElementById('app-container');
 
   if (user) {
+    await cleanAllExcept(user.uid);
     if (loginContainer) loginContainer.style.display = 'none';
     if (appContainer) appContainer.style.display = 'block';
     initApp(user);

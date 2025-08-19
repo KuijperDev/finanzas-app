@@ -40,7 +40,7 @@ export async function getAccounts(userId) {
   if (localAccounts.length > 0) return localAccounts.filter(acc => acc.syncStatus !== 'pending_delete');
   try {
     const remoteAccounts = await remoteLoadAccounts(userId);
-    await db.cuentas.clear();
+    await db.cuentas.where('userId').equals(userId).delete();
     for (const acc of remoteAccounts) {
       await db.cuentas.put({ ...acc, syncStatus: 'synced', userId });
     }
