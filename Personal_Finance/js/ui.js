@@ -407,6 +407,9 @@ export async function renderEditableTable(userId) {
         if (!seguro) return;
         await removeTransaction(tx.id, userId); // <-- Usa el método del sync, no el de storage.js
         await renderTransactions(userId); // <-- Refresca la tabla
+
+        const transactions = await getTransactions(userId);
+        const idx = transactions.findIndex(t => t.id === tx.id);  
       });
     }
 

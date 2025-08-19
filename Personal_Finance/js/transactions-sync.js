@@ -56,10 +56,10 @@ export async function syncPendingTransactions(userId) {
     try {
       if (tx.syncStatus === 'pending') {
         await remoteSaveTransaction(tx, tx.id, userId);
-        await db.transacciones.where('id').equals(tx.id).modify({ syncStatus: 'synced' });
+        await db.transacciones.where('id').equals(String(tx.id)).modify({ syncStatus: 'synced' });
       } else if (tx.syncStatus === 'pending_delete') {
         await remoteDeleteTransaction(tx.id, userId);
-        await db.transacciones.where('id').equals(tx.id).delete();
+        await db.transacciones.where('id').equals(String(tx.id)).delete();
       }
     } catch (e) {
       if (!e.message.includes('Quota exceeded')) throw e;
