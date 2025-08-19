@@ -19,7 +19,7 @@ export async function saveToUserCollection(path, data, id = null) {
   const uid = getUserId();
   const colRef = collection(db, 'users', uid, path);
   if (id) {
-    const docRef = doc(colRef, id);
+    const docRef = doc(colRef, String(id));
     await setDoc(docRef, data);
   } else {
     await addDoc(colRef, data);

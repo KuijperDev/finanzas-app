@@ -54,12 +54,12 @@ export async function loadAccounts(userId) {
 
 export async function saveAccount(account, id = null, userId) {
   const colRef = getUserCollection('accounts', userId);
-  const docRef = id ? doc(colRef, id) : doc(colRef);
+  const docRef = id ? doc(colRef, String(id)) : doc(colRef);
   await setDoc(docRef, account);
 }
 
 export async function deleteAccount(id, userId) {
   const colRef = getUserCollection('accounts', userId);
-  const docRef = doc(colRef, id);
+  const docRef = doc(colRef, String(id));
   await deleteDoc(docRef);
 }
