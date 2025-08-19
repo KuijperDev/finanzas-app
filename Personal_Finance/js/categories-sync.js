@@ -10,8 +10,8 @@ import {
  */
 export async function getCategories(userId) {
   // Cargamos locales
-  const ingresos = (await db.categorias.where('type').equals('ingreso').toArray()).map(cleanCategory);
-  const gastos = (await db.categorias.where('type').equals('gasto').toArray()).map(cleanCategory);
+  const ingresos = (await db.categorias.where('userId').equals(userId).and(c => c.type === 'ingreso').toArray()).map(cleanCategory);
+  const gastos = (await db.categorias.where('userId').equals(userId).and(c => c.type === 'gasto').toArray()).map(cleanCategory);
   if (ingresos.length || gastos.length) return { ingresos, gastos };
 
   // Si no hay locales, intentamos remotos
@@ -20,10 +20,10 @@ export async function getCategories(userId) {
     // Sincronizamos a local
     await db.categorias.clear();
     for (const cat of remoteCats.ingresos) {
-      await db.categorias.put({ ...cat, type: 'ingreso', syncStatus: 'synced' });
+      await db.categorias.put({ ...cat, type: 'ingreso', syncStatus: 'synced', userId });
     }
     for (const cat of remoteCats.gastos) {
-      await db.categorias.put({ ...cat, type: 'gasto', syncStatus: 'synced' });
+      await db.categorias.put({ ...cat, type: 'gasto', syncStatus: 'synced', userId });
     }
     return remoteCats;
   } catch (e) {
@@ -39,7 +39,7 @@ export async function addCategory(type, name, userId) {
   // Evitar duplicados
   const exists = await db.categorias.where({ type, name }).count();
   if (!exists) {
-    await db.categorias.add({ type, name, sub: [], syncStatus: 'pending' });
+    await db.categorias.add({ type, name, sub: [], syncStatus: 'pending', userId });
     try {
       await syncAllCategories(userId); // Sincroniza todo el objeto con Firestore
     } catch (e) {
@@ -72,7 +72,7 @@ export async function addSubcategory(type, parentName, subName, userId) {
  * Elimina una categoría completa
  */
 export async function deleteCategory(type, name, userId) {
-  await db.categorias.where({ type, name }).delete();
+ await db.categorias.where({ userId, type, name }).delete();
   try {
     await syncAllCategories(userId);
   } catch (e) {

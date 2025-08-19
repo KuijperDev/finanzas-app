@@ -3,7 +3,7 @@ import { saveAccount as remoteSaveAccount, deleteAccount as remoteDeleteAccount,
 
 // Añadir cuenta local + sync
 export async function addAccount(account, userId) {
-  await db.cuentas.put({ ...account, syncStatus: 'pending' });
+  await db.cuentas.put({ ...account, syncStatus: 'pending', userId });
   try {
     await remoteSaveAccount(account, account.id, userId);
     await db.cuentas.where('id').equals(account.id).modify({ syncStatus: 'synced' });
@@ -14,7 +14,7 @@ export async function addAccount(account, userId) {
 
 // Actualizar cuenta local + sync
 export async function updateAccount(account, userId) {
-  await db.cuentas.put({ ...account, syncStatus: 'pending' });
+  await db.cuentas.put({ ...account, syncStatus: 'pending', userId });
   try {
     await remoteSaveAccount(account, account.id, userId);
     await db.cuentas.where('id').equals(account.id).modify({ syncStatus: 'synced' });
@@ -25,7 +25,7 @@ export async function updateAccount(account, userId) {
 
 // Eliminar cuenta local + sync
 export async function removeAccount(id, userId) {
-  await db.cuentas.where('id').equals(id).modify({ syncStatus: 'pending_delete' });
+  await db.cuentas.where('id').equals(id).modify({ syncStatus: 'pending_delete', userId });
   try {
     await remoteDeleteAccount(id, userId);
     await db.cuentas.where('id').equals(id).delete();
@@ -36,13 +36,13 @@ export async function removeAccount(id, userId) {
 
 // Obtener cuentas (local primero, si hay datos)
 export async function getAccounts(userId) {
-  const localAccounts = await db.cuentas.toArray();
+  const localAccounts = await db.cuentas.where('userId').equals(userId).toArray();
   if (localAccounts.length > 0) return localAccounts.filter(acc => acc.syncStatus !== 'pending_delete');
   try {
     const remoteAccounts = await remoteLoadAccounts(userId);
     await db.cuentas.clear();
     for (const acc of remoteAccounts) {
-      await db.cuentas.put({ ...acc, syncStatus: 'synced' });
+      await db.cuentas.put({ ...acc, syncStatus: 'synced', userId });
     }
     return remoteAccounts;
   } catch (e) {

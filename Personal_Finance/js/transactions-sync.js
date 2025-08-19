@@ -3,7 +3,7 @@ import { saveTransaction as remoteSaveTransaction, deleteTransaction as remoteDe
 
 // Añadir transacción local + sync
 export async function addTransaction(tx, userId) {
-  await db.transacciones.put({ ...tx, syncStatus: 'pending' });
+  await db.transacciones.put({ ...tx, syncStatus: 'pending', userId });
   try {
     await remoteSaveTransaction(tx, tx.id, userId);
     await db.transacciones.where('id').equals(tx.id).modify({ syncStatus: 'synced' });
@@ -14,7 +14,7 @@ export async function addTransaction(tx, userId) {
 
 // Actualizar transacción local + sync
 export async function updateTransaction(tx, userId) {
-  await db.transacciones.put({ ...tx, syncStatus: 'pending' });
+  await db.transacciones.put({ ...tx, syncStatus: 'pending', userId });
   try {
     await remoteSaveTransaction(tx, tx.id, userId);
     await db.transacciones.where('id').equals(tx.id).modify({ syncStatus: 'synced' });
@@ -36,13 +36,13 @@ export async function removeTransaction(id, userId) {
 
 // Obtener transacciones (local primero, si hay datos)
 export async function getTransactions(userId) {
-  const localTxs = await db.transacciones.toArray();
-  if (localTxs.length > 0) return localTxs.filter(tx => tx.syncStatus !== 'pending_delete');
+  const localTxs = await db.transacciones.where('userId').equals(userId).toArray();
+  if (localTxs.length > 0) return localTxs.filter(tx => tx.syncStatus !== 'pending_delete');  
   try {
     const remoteTxs = await remoteLoadTransactions(userId);
     await db.transacciones.clear();
     for (const tx of remoteTxs) {
-      await db.transacciones.put({ ...tx, syncStatus: 'synced' });
+      await db.transacciones.put({ ...tx, syncStatus: 'synced', userId });
     }
     return remoteTxs;
   } catch (e) {
