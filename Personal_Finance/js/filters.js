@@ -1,5 +1,5 @@
-import { getAccounts } from './accounts.js';
-import { getCategories } from './categories.js';
+import { getAccounts } from './accounts-sync.js';
+import { getCategories } from './categories-sync.js';
 import { auth } from './firebase-init.js';
 
 export function getFilters() {

@@ -1,4 +1,4 @@
-import { addTransaction } from './transactions.js';
+import { addTransaction } from './transactions-sync.js';
 import { renderTransactions } from './ui.js';
 
 export function setupForm() {

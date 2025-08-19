@@ -1,7 +1,8 @@
 // ✅ Todos los imports deben ir arriba
-import { getTransactions, addTransaction, initTransactions, updateTransaction   } from "./transactions.js";
-import { getAccounts } from "./accounts.js";
-import { getCategories } from "./categories.js";
+
+import { addTransaction, updateTransaction, removeTransaction, getTransactions, syncPendingTransactions } from './transactions-sync.js';
+import { getAccounts } from "./accounts-sync.js";
+import { getCategories } from "./categories-sync.js";
 import { saveTransaction } from "./storage.js";
 import { getFilters } from "./filters.js";
 import { deleteTransaction } from "./storage.js";
@@ -18,8 +19,9 @@ export function setCurrentUserId(uid) {
 
 // === Mostrar todas las transacciones ===
 export async function renderTransactions(userId) {
-  await initTransactions(userId);
-  let transactions = getTransactions().slice();
+  //await initTransactions(userId);
+  let transactions = await getTransactions(userId);
+  transactions = transactions.slice();
 
   // Aplicar filtros
   const filters = getFilters();
@@ -273,7 +275,8 @@ export async function insertEditableRow(userId) {
 
 // === Tabla editable ===
 export async function renderEditableTable(userId) {
-  let transactions = getTransactions().slice();
+  let transactions = await getTransactions(userId);
+  transactions = transactions.slice();
   // ORDENAR TABLA
   if (currentSortField) {
     transactions.sort((a, b) => {

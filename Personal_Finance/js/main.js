@@ -2,12 +2,14 @@
 import { renderTransactions, insertEditableRow, renderEditableTable, updateSortIndicators, setCurrentUserId } from './ui.js';
 import { exportToCSV } from './export.js';
 import { handleFileImport } from './import.js';
-import { initAccounts, addAccount, updateAccount } from './accounts.js';
+import { initAccounts } from './accounts.js';
 import { renderCategories, setupCategoryEvents } from './ui-categories.js';
 import { getFilters, initFilters } from './filters.js';
 import { registrarUsuario, iniciarSesion, cerrarSesion, escucharUsuario } from './auth.js';
 import { setupForm } from './form.js';
-import { addCategory, addSubcategory, deleteCategory, deleteSubcategory } from './categories.js';
+
+import { addAccount, updateAccount, removeAccount, getAccounts, syncPendingAccounts } from './accounts-sync.js';
+import { addCategory, addSubcategory, deleteCategory, deleteSubcategory, getCategories, syncPendingCategories } from './categories-sync.js';
 
 let currentUserId = null; // 👈 DECLARA GLOBAL
 
@@ -72,6 +74,10 @@ function initLogin() {
 async function initApp(user) {
   const userId = user.uid; // UID del usuario autenticado
   currentUserId = userId;  // 👈 ASIGNA GLOBAL
+
+  // Al iniciar, intenta sincronizar pendientes:
+  await syncPendingCategories(user.uid);
+
   setupForm(userId);
   setCurrentUserId(userId);
   await renderTransactions(userId);

@@ -4,7 +4,7 @@ import {
   deleteAccount
 } from './storage.js';
 
-import { getTransactions } from './transactions.js';
+import { getTransactions } from './transactions-sync.js';
 
 const accountsContainer = document.getElementById('accounts-list');
 const accountForm = document.getElementById('add-account-form');
@@ -60,8 +60,8 @@ export async function removeAccount(id, userId) {
 }
 
 // Renderiza la lista de cuentas en la UI
-export function renderAccounts(userId) {
-  const transactions = getTransactions();
+export async function renderAccounts(userId) {
+  const transactions = await getTransactions(userId);
   accountsContainer.innerHTML = '';
 
   if (!accounts.length) {
@@ -92,9 +92,11 @@ export function renderAccounts(userId) {
   });
 
   document.querySelectorAll('.edit-account-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const id = btn.dataset.id;
-      const account = getAccounts().find(acc => acc.id === id);
+      // Debes pasar el userId, si lo tienes disponible en el scope
+      const accountsArr = await getAccounts(userId);
+      const account = accountsArr.find(acc => acc.id === id);
       if (account) {
         fillAccountForm(account);
       }

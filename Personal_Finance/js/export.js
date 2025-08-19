@@ -1,4 +1,4 @@
-import { getTransactions } from './transactions.js';
+import { getTransactions } from './transactions-sync.js';
 
 export function exportToCSV() {
   const transactions = getTransactions();

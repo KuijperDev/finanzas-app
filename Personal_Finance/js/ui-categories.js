@@ -1,4 +1,4 @@
-import { getCategories } from './categories.js';
+import { getCategories } from './categories-sync.js';
 
 export async function renderCategories(userId) {
   const data = await getCategories(userId);
