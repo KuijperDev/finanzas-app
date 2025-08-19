@@ -402,15 +402,13 @@ export async function renderEditableTable(userId) {
     // Listener para borrar
     const deleteBtn = row.querySelector('.delete-btn');
     if (deleteBtn) {
-  deleteBtn.addEventListener('click', async () => {
-    const seguro = window.confirm('¿Seguro que quieres borrar esta transacción? Esta acción no se puede deshacer.');
-    if (!seguro) return;
-    await deleteTransaction(tx.id, userId);
-    row.remove();
-    const idx = getTransactions().findIndex(t => t.id === tx.id);
-    if (idx !== -1) getTransactions().splice(idx, 1);
-  });
-}
+      deleteBtn.addEventListener('click', async () => {
+        const seguro = window.confirm('¿Seguro que quieres borrar esta transacción? Esta acción no se puede deshacer.');
+        if (!seguro) return;
+        await removeTransaction(tx.id, userId); // <-- Usa el método del sync, no el de storage.js
+        await renderTransactions(userId); // <-- Refresca la tabla
+      });
+    }
 
   });
 }
