@@ -410,6 +410,7 @@ export async function renderEditableTable(userId) {
 
         const transactions = await getTransactions(userId);
         const idx = transactions.findIndex(t => t.id === tx.id);  
+        
       });
     }
 
