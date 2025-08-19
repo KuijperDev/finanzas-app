@@ -130,3 +130,18 @@ function cleanCategory(cat) {
   // Devuelve solo { name, sub }
   return { name: cat.name, sub: Array.isArray(cat.sub) ? cat.sub : [] };
 }
+
+// Guarda todas las categorías (ingresos y gastos) en Dexie/IndexedDB
+export async function saveCategoriesLocal(data, userId) {
+  // Limpia todas las categorías locales antes de importar
+  await db.categorias.clear();
+
+  // Guarda ingresos
+  for (const cat of data.ingresos || []) {
+    await db.categorias.put({ ...cat, type: 'ingreso', userId });
+  }
+  // Guarda gastos
+  for (const cat of data.gastos || []) {
+    await db.categorias.put({ ...cat, type: 'gasto', userId });
+  }
+}

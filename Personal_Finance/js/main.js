@@ -247,8 +247,7 @@ async function initApp(user) {
       errorBox.style.display = 'block';
       return;
     }
-    try {
-      console.log('Tipo:', tipo, 'Nombre:', nombre, 'UserId:', currentUserId);
+    try {     
       await addCategory(tipo, nombre, currentUserId);
       document.getElementById('modal-categoria').classList.add('hidden');
       await renderCategories(currentUserId);

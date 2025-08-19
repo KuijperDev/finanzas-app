@@ -1,4 +1,4 @@
-import { getCategories } from './categories-sync.js';
+import { getCategories, saveCategoriesLocal } from './categories-sync.js';
 
 export async function renderCategories(userId) {
   const data = await getCategories(userId);
@@ -136,3 +136,37 @@ export function setupCategoryEvents(userId) {
     }
   });
 }
+
+// Exportar categorías
+document.getElementById('export-categories-btn').addEventListener('click', async () => {
+  const userId = localStorage.getItem('usuarioActual');
+  const data = await getCategories(userId);
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'categorias-export.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+// Importar categorías
+document.getElementById('import-categories-btn').addEventListener('click', () => {
+  document.getElementById('import-categories-file').click();
+});
+
+document.getElementById('import-categories-file').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const text = await file.text();
+  let data;
+  try {
+    data = JSON.parse(text);
+    const userId = localStorage.getItem('usuarioActual');
+    await saveCategoriesLocal(data, userId); // Adapta si usas otro nombre de función
+    alert('Categorías importadas correctamente');
+    await renderCategories(userId);
+  } catch (err) {
+    alert('Error al importar el archivo: ' + err.message);
+  }
+});

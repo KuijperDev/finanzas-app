@@ -34,7 +34,6 @@ export async function saveCategories(data, userId) {
 
 // === Añadir categoría ===
 export async function addCategory(type, name, userId) {
-  console.log('addCategory called', type, name, userId);
   const data = await getCategories(userId);
   data[type] = Array.isArray(data[type]) ? data[type] : [];
   const exists = data[type].some(cat => cat.name === name);
