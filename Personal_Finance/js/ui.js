@@ -5,7 +5,7 @@ import { getAccounts } from "./accounts-sync.js";
 import { getCategories } from "./categories-sync.js";
 import { saveTransaction } from "./storage.js";
 import { getFilters } from "./filters.js";
-import { deleteTransaction } from "./storage.js";
+//import { deleteTransaction } from "./storage.js";
 const tableBody = document.querySelector("#transactions-table tbody");
 const balance = document.getElementById("balance");
 
