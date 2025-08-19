@@ -72,7 +72,7 @@ export async function addSubcategory(type, parentName, subName, userId) {
  * Elimina una categoría completa
  */
 export async function deleteCategory(type, name, userId) {
- await db.categorias.where({ userId, type, name }).delete();
+ await db.categorias.where('userId').equals(userId).and(c => c.type === type && c.name === name).delete();
   try {
     await syncAllCategories(userId);
   } catch (e) {
@@ -134,7 +134,7 @@ function cleanCategory(cat) {
 // Guarda todas las categorías (ingresos y gastos) en Dexie/IndexedDB
 export async function saveCategoriesLocal(data, userId) {
   // Limpia todas las categorías locales antes de importar
-  await db.categorias.clear();
+  await db.categorias.where('userId').equals(userId).delete();
 
   // Guarda ingresos
   for (const cat of data.ingresos || []) {
