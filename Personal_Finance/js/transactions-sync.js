@@ -3,7 +3,8 @@ import { saveTransaction as remoteSaveTransaction, deleteTransaction as remoteDe
 
 async function getNextTransactionId(userId) {
   const txs = await db.transacciones.where('userId').equals(userId).toArray();
-  if (!txs.length) return 1;
+  const ids = txs.map(tx => Number(tx.id)).filter(n => !isNaN(n));
+  if (!ids.length) return 1;
   return Math.max(...txs.map(tx => Number(tx.id) || 0)) + 1;
 }
 

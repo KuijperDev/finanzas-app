@@ -1,6 +1,6 @@
 import { getTransactions } from './transactions-sync.js';
 
-export async function exportToCSV() {
+export async function exportToCSV(userId) {
   const transactions = await getTransactions(userId);
   if (!transactions.length) return alert('No hay datos para exportar.');
 
