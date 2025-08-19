@@ -25,10 +25,9 @@ export async function updateAccount(account, userId) {
 
 // Eliminar cuenta local + sync
 export async function removeAccount(id, userId) {
-  await db.cuentas.where('id').equals(id).modify({ syncStatus: 'pending_delete', userId });
+  await db.cuentas.where('userId').equals(userId).and(tx => tx.id === id).delete();
   try {
     await remoteDeleteAccount(id, userId);
-    await db.cuentas.where('id').equals(id).delete();
   } catch (e) {
     if (!e.message.includes('Quota exceeded')) throw e;
   }

@@ -25,10 +25,9 @@ export async function updateTransaction(tx, userId) {
 
 // Eliminar transacción local + sync
 export async function removeTransaction(id, userId) {
-  await db.transacciones.where('id').equals(id).modify({ syncStatus: 'pending_delete' });
+  await db.transacciones.where('userId').equals(userId).and(tx => tx.id === id).delete();
   try {
     await remoteDeleteTransaction(id, userId);
-    await db.transacciones.where('id').equals(id).delete();
   } catch (e) {
     if (!e.message.includes('Quota exceeded')) throw e;
   }
