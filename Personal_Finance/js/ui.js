@@ -217,7 +217,7 @@ export async function insertEditableRow(userId) {
     }
   }
 
-  document.getElementById("save-row-btn").addEventListener("click", () => {
+  document.getElementById("save-row-btn").addEventListener("click", async () => {
     const transaction = {
       //id: crypto.randomUUID(),
       date: new Date(document.getElementById("edit-date").value)
@@ -253,8 +253,8 @@ export async function insertEditableRow(userId) {
       return;
     }
 
-    addTransaction(transaction, userId);
-    renderTransactions(userId);
+    await addTransaction(transaction, userId);
+    await renderTransactions(userId);
     const addBtn = document.getElementById("add-row-btn");
     if (addBtn) addBtn.textContent = "➕ ";
   });
