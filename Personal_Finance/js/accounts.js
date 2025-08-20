@@ -50,13 +50,14 @@ export async function updateAccount(updatedAccount, userId) {
 
 // Elimina una cuenta
 export async function removeAccount(id, userId) {
-  const confirmDelete = confirm("¿Estás seguro de eliminar esta cuenta?");
-  if (!confirmDelete) return;
-
-  await deleteAccount(id, userId);
-  accounts = accounts.filter(acc => acc.id !== id);
-  renderAccounts(userId);
-  renderAccountOptionsInForm(userId); 
+  const account = accounts.find(acc => acc.id === id);
+  window.modalDeleteInfo = {
+    type: 'account',
+    id: id
+  };
+  document.getElementById('modal-eliminar-title').textContent = '¿Eliminar cuenta?';
+  document.getElementById('modal-eliminar-text').textContent = `Se eliminará la cuenta "${account?.name || id}". Esta acción no se puede deshacer.`;
+  document.getElementById('modal-eliminar').classList.remove('hidden');
 }
 
 // Renderiza la lista de cuentas en la UI
@@ -164,3 +165,9 @@ export async function renderAccountOptionsInForm(selectId = 'cuenta', userId) {
 }
 
 
+export async function removeAccountReal(id, userId) {
+  await deleteAccount(id, userId);
+  accounts = accounts.filter(acc => acc.id !== id);
+  renderAccounts(userId);
+  renderAccountOptionsInForm(userId); 
+}

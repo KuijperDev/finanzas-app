@@ -399,18 +399,17 @@ export async function renderEditableTable(userId) {
       });
     }
 
-    // Listener para borrar
+    // MODAL ELIMINAR para transacciones
     const deleteBtn = row.querySelector('.delete-btn');
     if (deleteBtn) {
-      deleteBtn.addEventListener('click', async () => {
-        const seguro = window.confirm('¿Seguro que quieres borrar esta transacción? Esta acción no se puede deshacer.');
-        if (!seguro) return;
-        await removeTransaction(tx.id, userId); // <-- Usa el método del sync, no el de storage.js
-        await renderTransactions(userId); // <-- Refresca la tabla
-
-        const transactions = await getTransactions(userId);
-        const idx = transactions.findIndex(t => t.id === tx.id);  
-        
+      deleteBtn.addEventListener('click', () => {
+        window.modalDeleteInfo = {
+          type: 'transaction',
+          id: tx.id
+        };
+        document.getElementById('modal-eliminar-title').textContent = '¿Eliminar transacción?';
+        document.getElementById('modal-eliminar-text').textContent = `Se eliminará la transacción con concepto: "${tx.concept}". Esta acción no se puede deshacer.`;
+        document.getElementById('modal-eliminar').classList.remove('hidden');
       });
     }
 

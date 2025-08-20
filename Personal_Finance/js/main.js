@@ -12,6 +12,7 @@ import db from './db-local.js';
 
 import { addAccount, updateAccount, removeAccount, getAccounts, syncPendingAccounts } from './accounts-sync.js';
 import { addCategory, addSubcategory, deleteCategory, deleteSubcategory, getCategories, syncPendingCategories } from './categories-sync.js';
+import { removeTransaction } from './transactions-sync.js';
 
 let currentUserId = null; // 👈 DECLARA GLOBAL
 
@@ -308,34 +309,50 @@ async function initApp(user) {
   });
 
   // MODAL ELIMINAR (categoría o subcategoría)
-  let eliminarTipo = null, eliminarNombre = null, eliminarPadre = null;
   document.addEventListener('click', function(e) {
     if (e.target.classList.contains('delete-category-btn')) {
-      eliminarTipo = e.target.dataset.type;
-      eliminarNombre = e.target.dataset.name;
-      eliminarPadre = null;
+      window.modalDeleteInfo = {
+        type: 'category',
+        catType: e.target.dataset.type,
+        catName: e.target.dataset.name
+      };
       document.getElementById('modal-eliminar-title').textContent = '¿Eliminar categoría?';
-      document.getElementById('modal-eliminar-text').textContent = `Se eliminará la categoría "${eliminarNombre}" y sus subcategorías.`;
+      document.getElementById('modal-eliminar-text').textContent = `Se eliminará la categoría "${window.modalDeleteInfo.catName}" y sus subcategorías.`;
       document.getElementById('modal-eliminar').classList.remove('hidden');
     }
     if (e.target.classList.contains('delete-subcategory-btn')) {
-      eliminarTipo = e.target.dataset.type;
-      eliminarPadre = e.target.dataset.parent;
-      eliminarNombre = e.target.dataset.name;
+      window.modalDeleteInfo = {
+        type: 'subcategory',
+        catType: e.target.dataset.type,
+        subParent: e.target.dataset.parent,
+        subName: e.target.dataset.name
+      };
       document.getElementById('modal-eliminar-title').textContent = '¿Eliminar subcategoría?';
-      document.getElementById('modal-eliminar-text').textContent = `Se eliminará la subcategoría "${eliminarNombre}" de "${eliminarPadre}".`;
+      document.getElementById('modal-eliminar-text').textContent = `Se eliminará la subcategoría "${window.modalDeleteInfo.subName}" de "${window.modalDeleteInfo.subParent}".`;
       document.getElementById('modal-eliminar').classList.remove('hidden');
     }
   });
+
   document.getElementById('btn-eliminar-confirmar').addEventListener('click', async () => {
-    if (eliminarTipo && eliminarNombre && !eliminarPadre) {
-      await deleteCategory(eliminarTipo, eliminarNombre, currentUserId);
-    } else if (eliminarTipo && eliminarPadre && eliminarNombre) {
-      await deleteSubcategory(eliminarTipo, eliminarPadre, eliminarNombre, currentUserId);
+    const info = window.modalDeleteInfo || {};
+
+    if (info.type === 'transaction' && info.id) {
+      await removeTransaction(info.id, currentUserId);
+      await renderTransactions(currentUserId);
+    } else if (info.type === 'account' && info.id) {
+      await removeAccount(info.id, currentUserId);
+      await initAccounts(currentUserId);
+    } else if (info.type === 'category' && info.catType && info.catName) {
+      await deleteCategory(info.catType, info.catName, currentUserId);
+      await renderCategories(currentUserId);
+    } else if (info.type === 'subcategory' && info.catType && info.subParent && info.subName) {
+      await deleteSubcategory(info.catType, info.subParent, info.subName, currentUserId);
+      await renderCategories(currentUserId);
     }
     document.getElementById('modal-eliminar').classList.add('hidden');
-    await renderCategories(currentUserId);
+    window.modalDeleteInfo = {};
   });
+
   document.getElementById('btn-eliminar-cancelar').addEventListener('click', () => {
     document.getElementById('modal-eliminar').classList.add('hidden');
   });
