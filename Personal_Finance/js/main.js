@@ -14,6 +14,8 @@ import { addAccount, updateAccount, removeAccount, getAccounts, syncPendingAccou
 import { addCategory, addSubcategory, deleteCategory, deleteSubcategory, getCategories, syncPendingCategories } from './categories-sync.js';
 import { removeTransaction } from './transactions-sync.js';
 
+import { renderResumen } from './resumen.js';
+
 let currentUserId = null; // 👈 DECLARA GLOBAL
 
 // === TEMA OSCURO ===
@@ -120,19 +122,23 @@ async function initApp(user) {
   const transactionsView = document.getElementById('transactions-view');
   const accountsView = document.getElementById('accounts-view');
   const categoriesView = document.getElementById('categories-view');
+  const resumenView = document.getElementById('resumen-view');
 
   const tabTransactions = document.getElementById('tab-transactions');
   const tabAccounts = document.getElementById('tab-accounts');
   const tabCategories = document.getElementById('tab-categories');
+  const tabResumen = document.getElementById('tab-resumen');
 
   async function activateTab(tabName) {
     transactionsView.style.display = tabName === 'transactions' ? 'block' : 'none';
     accountsView.style.display = tabName === 'accounts' ? 'block' : 'none';
     categoriesView.style.display = tabName === 'categories' ? 'block' : 'none';
+    resumenView.style.display = tabName === 'resumen' ? 'block' : 'none';
 
     tabTransactions.classList.toggle('active', tabName === 'transactions');
     tabAccounts.classList.toggle('active', tabName === 'accounts');
     tabCategories.classList.toggle('active', tabName === 'categories');
+    tabResumen.classList.toggle('active', tabName === 'resumen');
 
     localStorage.setItem('activeTab', tabName);
 
@@ -145,11 +151,33 @@ async function initApp(user) {
       setupCategoryEvents(userId);
     }
     if (tabName === 'transactions') await initAccounts(userId);
+    if (tabName === 'resumen') {
+      await renderResumen(userId);  // Sin filtros al abrir
+      // Configura el botón aplicar filtros solo una vez
+      if (!window.resumenFiltrosHandler) {
+        window.resumenFiltrosHandler = true;
+        const btn = document.getElementById('resumen-aplicar-filtros');
+        if (btn) {
+          btn.addEventListener('click', async () => {
+            const cuentaId = document.getElementById('resumen-filter-account').value;
+            const from = document.getElementById('resumen-filter-from').value; // formato YYYY-MM
+            const to = document.getElementById('resumen-filter-to').value;     // formato YYYY-MM
+            await renderResumen(userId, {
+              cuentaId: cuentaId || null,
+              from: from || null,
+              to: to || null
+            });
+          });
+        }
+      }
+    }
+    
   }
 
   tabTransactions.addEventListener('click', () => activateTab('transactions'));
   tabAccounts.addEventListener('click', () => activateTab('accounts'));
   tabCategories.addEventListener('click', () => activateTab('categories'));
+  tabResumen.addEventListener('click', () => activateTab('resumen'));
 
   const savedTab = localStorage.getItem('activeTab') || 'transactions';
   activateTab(savedTab);
@@ -356,5 +384,6 @@ async function initApp(user) {
   document.getElementById('btn-eliminar-cancelar').addEventListener('click', () => {
     document.getElementById('modal-eliminar').classList.add('hidden');
   });
+
 
 }

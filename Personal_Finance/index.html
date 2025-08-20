@@ -29,6 +29,7 @@
       <button id="tab-transactions" class="active">🧾 Transacciones</button>
       <button id="tab-accounts">💼 Cuentas</button>
       <button id="tab-categories">🏷️ Categorías</button>
+      <button id="tab-resumen">📊 Resumen</button>
     </div>
 
     <div id="top-right-buttons">
@@ -138,6 +139,39 @@
         </div>
       </div>
     </section>
+
+     <!-- Vista de Resumen -->
+    <section id="resumen-view" style="display: none;">
+      <h2>Resumen Financiero</h2>
+
+      <!-- Filtros para la gráfica -->
+      <div id="resumen-filtros" style="margin-bottom: 20px;">
+        <label>
+          Cuenta:
+          <select id="resumen-filter-account">
+            <option value="">Todas</option>
+            <!-- Las cuentas se llenarán dinámicamente -->
+          </select>
+        </label>
+        <label>
+          Desde:
+          <input type="month" id="resumen-filter-from">
+        </label>
+        <label>
+          Hasta:
+          <input type="month" id="resumen-filter-to">
+        </label>
+        <button id="resumen-aplicar-filtros">Aplicar</button>
+      </div>
+
+      <div class="charts-container">
+        <div class="chart-card">
+          <h3>Ingresos vs Gastos (por mes)</h3>
+          <canvas id="chartIngresosGastos"></canvas>
+        </div>
+      </div>
+    </section>
+
   </div>
 
   <!-- Modales de categorías/subcategorías -->
@@ -183,6 +217,8 @@
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
   <script type="module" src="js/main.js"></script>
   <script src="https://unpkg.com/dexie@3.2.4/dist/dexie.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   
 </body>
 </html>
