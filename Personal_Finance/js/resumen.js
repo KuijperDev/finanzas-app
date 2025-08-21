@@ -55,6 +55,10 @@ export async function renderResumen(userId, filtros = {}) {
   const ingresos = labels.map(m => resumenPorMes[m].ingresos);
   const gastos = labels.map(m => resumenPorMes[m].gastos);
 
+
+  const textColor = getCssVar("--chart-text-color");
+  const gridColor = getCssVar("--chart-grid-color");
+
   // Destruir gráfica previa si existe
   if (chartIngresosGastos) chartIngresosGastos.destroy();
 
@@ -79,9 +83,17 @@ export async function renderResumen(userId, filtros = {}) {
     options: {
       responsive: true,
       plugins: {
-        legend: { position: 'top' },
+        legend: { position: 'top',labels: { color: textColor } },
         title: { display: true, text: 'Ingresos vs Gastos' }
+      },
+      scales: {
+        x: { ticks: { color: textColor }, grid: { color: gridColor } },
+        y: { ticks: { color: textColor }, grid: { color: gridColor } },
       }
     }
   });
+}
+
+function getCssVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }

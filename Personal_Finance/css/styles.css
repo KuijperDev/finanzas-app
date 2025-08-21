@@ -17,6 +17,8 @@
   --color-shadow: rgba(0,0,0,0.1);
   --radius: 10px;
   --transition: 0.3s cubic-bezier(.45,.7,.04,1);
+  --chart-text-color: #111;
+  --chart-grid-color: #ccc;
 }
 
 body {
@@ -43,6 +45,11 @@ body {
 h1 {
   text-align: center;
   margin-bottom: 1rem;
+}
+
+h4 {
+  color: var(--text-color);
+  margin-bottom: 0.5rem;
 }
 
 /* === RESUMEN / SALDO === */
@@ -224,6 +231,7 @@ td:nth-child(3)[style*="color: green"] {
 body.dark-mode {
   background: var(--color-bg-dark);
   color: #eee;
+  --text-color: #000000;
 }
 
 body.dark-mode .container {
